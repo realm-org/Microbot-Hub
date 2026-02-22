@@ -442,21 +442,22 @@ public class BlastoiseFurnaceScript extends Script {
                 int dosesNeeded = Math.max(1, (int) Math.ceil((targetEnergy - currentEnergy) / (double) perDoseRestore));
                 int maxDoses = getAvailableDosesForVariants(Rs2Potion.getRestoreEnergyPotionsVariants());
                 int dosesToDrink = Math.min(dosesNeeded, maxDoses);
-                String currentPotionBaseName = null;
+                String currentPotionName = null;
                 for (int i = 0; i < dosesToDrink && Microbot.getClient().getEnergy() < targetEnergy; i++) {
-                    if (currentPotionBaseName == null || !Rs2Inventory.hasItem(currentPotionBaseName)) {
+                    if (currentPotionName == null || !Rs2Inventory.hasItem(currentPotionName)) {
                         String dosePotionName = getLowestDosePotionName(Rs2Potion.getRestoreEnergyPotionsVariants());
                         if (dosePotionName == null || !withdrawPotion(dosePotionName)) {
                             break;
                         }
                         Rs2Inventory.waitForInventoryChanges(1800);
-                        currentPotionBaseName = getBaseName(dosePotionName);
+                        currentPotionName = dosePotionName;
                     }
-                    if (!drinkPotionDose(currentPotionBaseName)) {
+                    if (!drinkPotionDose(currentPotionName)) {
                         break;
                     }
+                    currentPotionName = getNextPotionDoseName(currentPotionName);
                 }
-                bankPotionRemnants(currentPotionBaseName);
+                bankPotionRemnants(currentPotionName == null ? null : getBaseName(currentPotionName));
             }
         }
     }
@@ -497,6 +498,19 @@ public class BlastoiseFurnaceScript extends Script {
         return Rs2Bank.getAll(item -> variants.stream().anyMatch(variant -> item.getName().toLowerCase().contains(variant.toLowerCase())))
                 .mapToInt(item -> item.getQuantity() * getDoseFromName(item.getName()))
                 .sum();
+    }
+
+    private String getNextPotionDoseName(String potionItemName) {
+        Matcher matcher = ITEM_NAME_SUFFIX_PATTERN.matcher(potionItemName);
+        if (matcher.find()) {
+            String baseName = matcher.group(1).trim();
+            int currentDose = Integer.parseInt(matcher.group(2));
+            if (currentDose > 1) {
+                return baseName + "(" + (currentDose - 1) + ")";
+            }
+            return baseName;
+        }
+        return potionItemName;
     }
 
     private void withdrawAndDrink(String potionItemName) {
