@@ -42,6 +42,11 @@ public class BlastoiseFurnaceScript extends Script {
     static final int coalBag = 12019;
     private static final int MAX_ORE_PER_INTERACTION = 27;
     private static final int MAX_ORE_PER_HYBRID_INTERACTION = 26;
+    private static final int TARGET_RUN_ENERGY_LEVEL = 9001;
+    private static final int ENERGY_RESTORE_PER_DOSE = 1000;
+    private static final int SUPER_ENERGY_RESTORE_PER_DOSE = 2000;
+    private static final int COAL_BAG_FILL_DELAY_MIN_MS = 650;
+    private static final int COAL_BAG_FILL_DELAY_MAX_MS = 1450;
     public static State state = State.BANKING;
     static boolean coalBagEmpty;
     static boolean primaryOreEmpty;
@@ -428,8 +433,11 @@ public class BlastoiseFurnaceScript extends Script {
         if (hasEnergyPotion) {
             String potionName = getLowestDosePotionName(Rs2Potion.getRestoreEnergyPotionsVariants());
             if (potionName != null) {
-                int targetEnergy = 9001;
+                int targetEnergy = TARGET_RUN_ENERGY_LEVEL;
                 int currentEnergy = Microbot.getClient().getEnergy();
+                if (currentEnergy >= targetEnergy) {
+                    return;
+                }
                 int perDoseRestore = getEstimatedEnergyRestorePerDose(potionName);
                 int dosesNeeded = Math.max(1, (int) Math.ceil((targetEnergy - currentEnergy) / (double) perDoseRestore));
                 int maxDoses = getAvailableDosesForVariants(Rs2Potion.getRestoreEnergyPotionsVariants());
@@ -446,7 +454,7 @@ public class BlastoiseFurnaceScript extends Script {
     }
 
     private void sleepAfterCoalBagFill() {
-        sleep(Rs2Random.between(650, 1450));
+        sleep(Rs2Random.between(COAL_BAG_FILL_DELAY_MIN_MS, COAL_BAG_FILL_DELAY_MAX_MS));
     }
 
     private String getLowestDosePotionName(List<String> variants) {
@@ -474,7 +482,7 @@ public class BlastoiseFurnaceScript extends Script {
 
     private int getEstimatedEnergyRestorePerDose(String potionItemName) {
         String lowerName = potionItemName.toLowerCase();
-        return lowerName.contains("super energy") ? 2000 : 1000;
+        return lowerName.contains("super energy") ? SUPER_ENERGY_RESTORE_PER_DOSE : ENERGY_RESTORE_PER_DOSE;
     }
 
     private int getAvailableDosesForVariants(List<String> variants) {
