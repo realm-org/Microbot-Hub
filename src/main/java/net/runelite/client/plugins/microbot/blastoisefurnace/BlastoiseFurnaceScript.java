@@ -531,8 +531,7 @@ public class BlastoiseFurnaceScript extends Script {
         if (!Rs2Inventory.interact(potionName, "drink")) {
             return false;
         }
-        Rs2Inventory.waitForInventoryChanges(1800);
-        return true;
+        return Rs2Inventory.waitForInventoryChanges(1800);
     }
 
     private void bankPotionRemnants(String baseName) {
