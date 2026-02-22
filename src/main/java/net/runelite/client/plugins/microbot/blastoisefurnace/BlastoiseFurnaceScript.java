@@ -442,13 +442,21 @@ public class BlastoiseFurnaceScript extends Script {
                 int dosesNeeded = Math.max(1, (int) Math.ceil((targetEnergy - currentEnergy) / (double) perDoseRestore));
                 int maxDoses = getAvailableDosesForVariants(Rs2Potion.getRestoreEnergyPotionsVariants());
                 int dosesToDrink = Math.min(dosesNeeded, maxDoses);
+                String currentPotionBaseName = null;
                 for (int i = 0; i < dosesToDrink && Microbot.getClient().getEnergy() < targetEnergy; i++) {
-                    String dosePotionName = getLowestDosePotionName(Rs2Potion.getRestoreEnergyPotionsVariants());
-                    if (dosePotionName == null) {
+                    if (currentPotionBaseName == null || !Rs2Inventory.hasItem(currentPotionBaseName)) {
+                        String dosePotionName = getLowestDosePotionName(Rs2Potion.getRestoreEnergyPotionsVariants());
+                        if (dosePotionName == null || !withdrawPotion(dosePotionName)) {
+                            break;
+                        }
+                        Rs2Inventory.waitForInventoryChanges(1800);
+                        currentPotionBaseName = getBaseName(dosePotionName);
+                    }
+                    if (!drinkPotionDose(currentPotionBaseName)) {
                         break;
                     }
-                    withdrawAndDrink(dosePotionName);
                 }
+                bankPotionRemnants(currentPotionBaseName);
             }
         }
     }
@@ -493,25 +501,42 @@ public class BlastoiseFurnaceScript extends Script {
 
     private void withdrawAndDrink(String potionItemName) {
         String baseName = getBaseName(potionItemName);
-        boolean withdrewPotion = Rs2Bank.withdrawOne(potionItemName);
-        if (!withdrewPotion) {
-            if (Rs2Inventory.isFull()) {
-                // Wait a full tick for safety
-                if (!Rs2Inventory.waitForInventoryChanges(600) && Rs2Inventory.isFull()) {
-                    log.debug("Inventory remained full while attempting to withdraw {}", potionItemName);
-                    return;
-                }
-                withdrewPotion = Rs2Bank.withdrawOne(potionItemName);
-            }
-            if (!withdrewPotion) {
-                log.debug("Failed to withdraw potion {} from the bank", potionItemName);
-                return;
-            }
+        if (!withdrawPotion(potionItemName)) {
+            return;
         }
         Rs2Inventory.waitForInventoryChanges(1800);
-        Rs2Inventory.interact(potionItemName, "drink");
+        if (drinkPotionDose(potionItemName)) {
+            bankPotionRemnants(baseName);
+        }
+    }
+
+    private boolean withdrawPotion(String potionItemName) {
+        boolean withdrewPotion = Rs2Bank.withdrawOne(potionItemName);
+        if (!withdrewPotion && Rs2Inventory.isFull()) {
+            // Wait a full tick for safety
+            if (!Rs2Inventory.waitForInventoryChanges(600) && Rs2Inventory.isFull()) {
+                log.debug("Inventory remained full while attempting to withdraw {}", potionItemName);
+                return false;
+            }
+            withdrewPotion = Rs2Bank.withdrawOne(potionItemName);
+        }
+        if (!withdrewPotion) {
+            log.debug("Failed to withdraw potion {} from the bank", potionItemName);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean drinkPotionDose(String potionName) {
+        if (!Rs2Inventory.interact(potionName, "drink")) {
+            return false;
+        }
         Rs2Inventory.waitForInventoryChanges(1800);
-        if (Rs2Inventory.hasItem(baseName)) {
+        return true;
+    }
+
+    private void bankPotionRemnants(String baseName) {
+        if (baseName != null && Rs2Inventory.hasItem(baseName)) {
             Rs2Bank.depositOne(baseName);
             Rs2Inventory.waitForInventoryChanges(1800);
         }
