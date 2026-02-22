@@ -159,7 +159,7 @@ public class BlastoiseFurnaceScript extends Script {
                             Microbot.stopPlugin(plugin);
                         }
 
-                        if (Microbot.getClient().getEnergy() < 8100) {
+                        if (Microbot.getClient().getEnergy() < config.runEnergyThreshold()) {
                             useStaminaPotions();
                         }
 
@@ -278,6 +278,7 @@ public class BlastoiseFurnaceScript extends Script {
         }
         if (!Rs2Inventory.interact(coalBag, "Fill"))
             return;
+        sleepAfterCoalBagFill();
         depositOre();
     }
 
@@ -290,8 +291,7 @@ public class BlastoiseFurnaceScript extends Script {
         }
         if (!Rs2Inventory.interact(coalBag, "Fill"))
             return;
-
-        sleep(500, 1200);
+        sleepAfterCoalBagFill();
         Rs2Bank.closeBank();
         sleepUntil(() -> !Rs2Bank.isOpen());
         depositOre();
@@ -305,8 +305,7 @@ public class BlastoiseFurnaceScript extends Script {
         }
         if (!Rs2Inventory.interact(coalBag, "Fill"))
             return;
-
-        sleep(500, 1200);
+        sleepAfterCoalBagFill();
         Rs2Bank.closeBank();
         sleepUntil(() -> !Rs2Bank.isOpen());
         depositOre();
@@ -429,9 +428,25 @@ public class BlastoiseFurnaceScript extends Script {
         if (hasEnergyPotion) {
             String potionName = getLowestDosePotionName(Rs2Potion.getRestoreEnergyPotionsVariants());
             if (potionName != null) {
-                withdrawAndDrink(potionName);
+                int targetEnergy = 9001;
+                int currentEnergy = Microbot.getClient().getEnergy();
+                int perDoseRestore = getEstimatedEnergyRestorePerDose(potionName);
+                int dosesNeeded = Math.max(1, (int) Math.ceil((targetEnergy - currentEnergy) / (double) perDoseRestore));
+                int maxDoses = getAvailableDosesForVariants(Rs2Potion.getRestoreEnergyPotionsVariants());
+                int dosesToDrink = Math.min(dosesNeeded, maxDoses);
+                for (int i = 0; i < dosesToDrink && Microbot.getClient().getEnergy() < targetEnergy; i++) {
+                    String dosePotionName = getLowestDosePotionName(Rs2Potion.getRestoreEnergyPotionsVariants());
+                    if (dosePotionName == null) {
+                        break;
+                    }
+                    withdrawAndDrink(dosePotionName);
+                }
             }
         }
+    }
+
+    private void sleepAfterCoalBagFill() {
+        sleep(Rs2Random.between(650, 1450));
     }
 
     private String getLowestDosePotionName(List<String> variants) {
@@ -455,6 +470,17 @@ public class BlastoiseFurnaceScript extends Script {
             return matcher.group(1).trim();
         }
         return itemName;
+    }
+
+    private int getEstimatedEnergyRestorePerDose(String potionItemName) {
+        String lowerName = potionItemName.toLowerCase();
+        return lowerName.contains("super energy") ? 2000 : 1000;
+    }
+
+    private int getAvailableDosesForVariants(List<String> variants) {
+        return Rs2Bank.getAll(item -> variants.stream().anyMatch(variant -> item.getName().toLowerCase().contains(variant.toLowerCase())))
+                .mapToInt(item -> item.getQuantity() * getDoseFromName(item.getName()))
+                .sum();
     }
 
     private void withdrawAndDrink(String potionItemName) {
@@ -701,4 +727,3 @@ public class BlastoiseFurnaceScript extends Script {
         return coffer == 1;
     }
 }
-
