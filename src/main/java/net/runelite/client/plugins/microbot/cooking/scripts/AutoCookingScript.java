@@ -102,7 +102,11 @@ public class AutoCookingScript extends Script {
                                 Rs2Camera.turnTo(cookingObject.getLocalLocation());
                                 return;
                             }
-                            Rs2Inventory.useItemOnObject(cookingItem.getRawItemID(), cookingObject.getId());
+                            if (location == CookingLocation.ROUGES_DEN) {
+                                Rs2GameObject.interact(cookingObject, "Cook");
+                            } else {
+                                Rs2Inventory.useItemOnObject(cookingItem.getRawItemID(), cookingObject.getId());
+                            }
 
                             boolean productionWidgetOpen = Rs2Widget.isProductionWidgetOpen();
                             if (!productionWidgetOpen) {
