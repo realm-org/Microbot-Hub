@@ -324,18 +324,19 @@ public class MotherloadMineScript extends Script
                 return;
             }
         }
-
-        WorldPoint hopperDeposit = (isUpperFloor() && config.upstairsHopperUnlocked()) ? HOPPER_DEPOSIT_UP : HOPPER_DEPOSIT_DOWN;
-        Rs2TileObjectModel hopper = rs2TileObjectCache.query().where(x -> x.getWorldLocation().equals(hopperDeposit)).withId(ObjectID.MOTHERLODE_HOPPER).first();
-
         if(isUpperFloor() && !config.upstairsHopperUnlocked())
         {
             ensureLowerFloor();
         }
-
+        
         final int paydirtToDeposit = payDirtCount();
+        sleep(800, 1200);
+        
+        WorldPoint hopperDeposit = (isUpperFloor() && config.upstairsHopperUnlocked()) ? HOPPER_DEPOSIT_UP : HOPPER_DEPOSIT_DOWN;
+        Rs2TileObjectModel hopper = rs2TileObjectCache.query().where(x -> x.getWorldLocation().equals(hopperDeposit)).withId(ObjectID.MOTHERLODE_HOPPER).first();
 
-        if (hopper != null && rs2TileObjectCache.query().interact(hopper.getId())) {
+
+        if (hopper != null && hopper.click("Deposit")) {
             sleepUntil(() -> payDirtCount() != paydirtToDeposit && !Rs2Player.isAnimating(), 10_000);
 
 			shouldRepairWaterwheel = true;
@@ -511,6 +512,11 @@ public class MotherloadMineScript extends Script
         {
             goUp();
             return false; // Wait until we've gone up
+        }
+
+        if (miningSpot.isUpstairs() && isUpperFloor())
+        {
+            return true; // if on upper floor lets mine... instead of walking
         }
 
         if (miningSpot.isDownstairs() && isUpperFloor()) {
