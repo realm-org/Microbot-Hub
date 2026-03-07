@@ -29,7 +29,6 @@ import net.runelite.client.plugins.microbot.util.tile.Rs2Tile;
 import net.runelite.client.plugins.microbot.util.walker.Rs2Walker;
 import net.runelite.client.plugins.microbot.util.widget.Rs2Widget;
 import net.runelite.client.plugins.microbot.woodcutting.enums.*;
-import net.runelite.client.plugins.microbot.woodcutting.enums.WoodcuttingTreeLocations;
 
 import javax.inject.Inject;
 import java.awt.event.KeyEvent;
@@ -405,7 +404,7 @@ public class AutoWoodcuttingScript extends Script {
         // prioritize campfire if available
         Rs2TileObjectModel fire = rs2TileObjectCache.query().where(x -> x.getId() == 49927).nearest(6); // Forester's campfire
         if (fire == null) {
-            rs2TileObjectCache.query().where(x -> x.getId() == 26185).nearest(6);
+            fire = rs2TileObjectCache.query().where(x -> x.getId() == 26185).nearest(6);
         }
         if (config.primaryAction() == WoodcuttingPrimaryAction.BURN_CAMPFIRE) {
             if (fire != null) {
@@ -424,10 +423,11 @@ public class AutoWoodcuttingScript extends Script {
                 Rs2Inventory.useLast(treeType.getLogID());
             }, 300, 100);
         } else if (!isFiremake() && useCampfire) {
-            Rs2Inventory.useItemOnObject(treeType.getLogID(), fire.getId());
+            fire.click("Tend-to");
             sleepUntil(() -> (!Rs2Player.isMoving() && Rs2Widget.findWidget("How many would you like to burn?", null, false) != null), 5000);
             Rs2Random.waitEx(400, 200);
             Rs2Keyboard.keyPress(KeyEvent.VK_SPACE);
+            sleep(1000, 1200);
             sleepUntil(() -> !Rs2Inventory.contains(treeType.getLog()) || !Rs2Player.isAnimating(), 40000);
 
             return;
