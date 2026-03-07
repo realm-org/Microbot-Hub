@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 )
 @Slf4j
 public class BanksShopperPlugin extends Plugin {
-    public final static String version = "1.4.0";
+    public final static String version = "1.4.2";
     @Inject
     private BanksShopperConfig config;
 
@@ -70,6 +70,10 @@ public class BanksShopperPlugin extends Plugin {
     private boolean useLogout;
     @Getter
     private boolean useExactNaming;
+    @Getter
+    private boolean blastFurnaceOptimization;
+    @Getter
+    private boolean useKeyboardWorldHop;
 
     @Override
     protected void startUp() throws AWTException {
@@ -81,6 +85,8 @@ public class BanksShopperPlugin extends Plugin {
         useLogout = config.logout();
         useExactNaming = config.useExactNaming();
         useNextWorld = config.useNextWorld();
+        blastFurnaceOptimization = config.blastFurnaceOptimization();
+        useKeyboardWorldHop = config.useKeyboardWorldHop();
         updateItemList(config.itemNames());
 
         if (overlayManager != null) {
@@ -138,6 +144,14 @@ public class BanksShopperPlugin extends Plugin {
 
         if (event.getKey().equals(BanksShopperConfig.useNextWorld)) {
             useNextWorld = config.useNextWorld();
+        }
+
+        if (event.getKey().equals(BanksShopperConfig.blastFurnaceOptimization)) {
+            blastFurnaceOptimization = config.blastFurnaceOptimization();
+        }
+
+        if (event.getKey().equals(BanksShopperConfig.useKeyboardWorldHop)) {
+            useKeyboardWorldHop = config.useKeyboardWorldHop();
         }
 
         if (event.getKey().equals(BanksShopperConfig.itemNames)) {

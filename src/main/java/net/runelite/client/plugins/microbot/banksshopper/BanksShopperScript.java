@@ -1,16 +1,20 @@
 package net.runelite.client.plugins.microbot.banksshopper;
 
+import net.runelite.api.GameState;
 import net.runelite.client.plugins.microbot.Microbot;
 import net.runelite.client.plugins.microbot.Script;
 import net.runelite.client.plugins.microbot.util.antiban.Rs2Antiban;
 import net.runelite.client.plugins.microbot.util.antiban.Rs2AntibanSettings;
 import net.runelite.client.plugins.microbot.util.bank.Rs2Bank;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
+import net.runelite.client.plugins.microbot.util.keyboard.Rs2Keyboard;
 import net.runelite.client.plugins.microbot.util.math.Rs2Random;
 import net.runelite.client.plugins.microbot.util.player.Rs2Player;
 import net.runelite.client.plugins.microbot.util.security.Login;
 import net.runelite.client.plugins.microbot.util.shop.Rs2Shop;
+import net.runelite.client.plugins.microbot.util.widget.Rs2Widget;
 
+import java.awt.event.KeyEvent;
 import java.util.concurrent.TimeUnit;
 
 enum ShopperState {
@@ -84,7 +88,9 @@ public class BanksShopperScript extends Script {
                                         }
                                         if (Rs2Inventory.isFull()){
                                             System.out.println("Inventory is full, stopping buy action to bank.");
-                                            Rs2Shop.closeShop();
+                                            if (!plugin.isBlastFurnaceOptimization()) {
+                                                Rs2Shop.closeShop();
+                                            }
                                             state = ShopperState.BANKING;
                                             return;
                                         }
@@ -128,8 +134,13 @@ public class BanksShopperScript extends Script {
                         }
                         break;
                     case BANKING:
-                        if (!Rs2Bank.bankItemsAndWalkBackToOriginalPosition(plugin.getItemNames(), initialPlayerLocation))
+                        if (plugin.isBlastFurnaceOptimization()) {
+                            if (!bankItemsWithoutWalkBack()) {
+                                return;
+                            }
+                        } else if (!Rs2Bank.bankItemsAndWalkBackToOriginalPosition(plugin.getItemNames(), initialPlayerLocation)) {
                             return;
+                        }
                         state = ShopperState.SHOPPING;
                         break;
                     case HOPPING:
@@ -165,12 +176,28 @@ public class BanksShopperScript extends Script {
      * Hops to a new world
      */
     private void hopWorld() {
-        System.out.println("Hopping worlds...");
-        Rs2Random.waitEx(3200, 800); // this sleep is required to avoid the message: please finish what you're doing before using the world switcher.
+        Rs2Shop.closeShop();
+        sleep(2400, 4800);
+        int world = Login.getRandomWorld(true, null);
+        boolean isHopped = Microbot.hopToWorld(world);
+        if (!isHopped) return;
+        boolean result = sleepUntil(() -> Rs2Widget.findWidget("Switch World") != null);
+        if (result) {
+            Rs2Keyboard.keyPress(KeyEvent.VK_SPACE);
+            sleepUntil(() -> Microbot.getClient().getGameState() == GameState.HOPPING);
+            sleepUntil(() -> Microbot.getClient().getGameState() == GameState.LOGGED_IN);
+        }
+    }
 
-        int world = plugin.isUseNextWorld() ? Login.getNextWorld(Rs2Player.isMember()) : Login.getRandomWorld(Rs2Player.isMember());
-        sleepUntil(() -> Microbot.hopToWorld(world), 15000);
-        System.out.println("Successfully hopped to world: " + world);
+    private void hopWorldWithKeyboardShortcut() {
+        Rs2Keyboard.keyHold(KeyEvent.VK_CONTROL);
+        Rs2Keyboard.keyHold(KeyEvent.VK_SHIFT);
+        Rs2Keyboard.keyHold(KeyEvent.VK_RIGHT);
+        sleepGaussian(80, 20);
+        Rs2Keyboard.keyRelease(KeyEvent.VK_RIGHT);
+        Rs2Keyboard.keyRelease(KeyEvent.VK_SHIFT);
+        Rs2Keyboard.keyRelease(KeyEvent.VK_CONTROL);
+        System.out.println("Sent world hop shortcut: Ctrl+Shift+Right");
     }
 
 
@@ -249,5 +276,42 @@ public class BanksShopperScript extends Script {
         }
         System.out.println("Item ID" + itemID + " not found in inventory.");
         return false;
+    }
+
+    private boolean bankItemsWithoutWalkBack() {
+        boolean openedBank = Rs2Bank.isOpen() || Rs2Bank.openBank();
+
+        if (!openedBank) {
+            openedBank = Rs2Bank.walkToBankAndUseBank();
+        }
+
+        if (!openedBank || !Rs2Bank.isOpen()) {
+            return false;
+        }
+
+        for (String itemName : plugin.getItemNames()) {
+            if (itemName == null || itemName.length() <= 1) {
+                continue;
+            }
+
+            if (itemName.matches("\\d+")) {
+                Rs2Bank.depositAll(Integer.parseInt(itemName));
+            } else {
+                Rs2Bank.depositAll(itemName);
+            }
+            sleepGaussian(120, 40);
+        }
+
+        if (Rs2Bank.isOpen()) {
+            if (plugin.isBlastFurnaceOptimization()) {
+                sleepUntil(() -> Rs2Shop.openShop(plugin.getNpcName(), plugin.isUseExactNaming()), 5000);
+                return true;
+            }
+
+            Rs2Bank.closeBank();
+            sleepUntil(() -> !Rs2Bank.isOpen(), 2000);
+        }
+
+        return true;
     }
 }

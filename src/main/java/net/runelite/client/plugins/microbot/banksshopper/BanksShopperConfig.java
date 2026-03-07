@@ -26,6 +26,8 @@ public interface BanksShopperConfig extends Config {
     String useBank = "useBank";
     String logout = "logout";
     String useNextWorld = "useNextWorld";
+        String blastFurnaceOptimization = "blastFurnaceOptimization";
+        String useKeyboardWorldHop = "useKeyboardWorldHop";
 
     @ConfigSection(
             name = "Action Settings",
@@ -105,6 +107,28 @@ public interface BanksShopperConfig extends Config {
     default boolean useNextWorld() {
         return false;
     }
+
+        @ConfigItem(
+                        position = 5,
+                        keyName = blastFurnaceOptimization,
+                        name = "Blast Furnace optimization",
+                        description = "Optimize route at Blast Furnace by banking/interacting directly",
+                        section = actionSection
+        )
+        default boolean blastFurnaceOptimization() {
+                return false;
+        }
+
+        @ConfigItem(
+                        position = 6,
+                        keyName = useKeyboardWorldHop,
+                        name = "Use Ctrl+Shift+Right to hop",
+                        description = "Use keyboard shortcut to hop to the next world",
+                        section = actionSection
+        )
+        default boolean useKeyboardWorldHop() {
+                return false;
+        }
 
     @ConfigItem(
             keyName = itemNames,
