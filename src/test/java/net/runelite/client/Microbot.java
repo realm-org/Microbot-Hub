@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import net.runelite.client.plugins.microbot.banksshopper.BanksShopperPlugin;
 import net.runelite.client.plugins.microbot.slayer.SlayerPlugin;
 
 public class Microbot
@@ -11,6 +12,7 @@ public class Microbot
 
 	private static final Class<?>[] debugPlugins = {
             SlayerPlugin.class,
+            BanksShopperPlugin.class,
 	};
 
     public static void main(String[] args) throws Exception

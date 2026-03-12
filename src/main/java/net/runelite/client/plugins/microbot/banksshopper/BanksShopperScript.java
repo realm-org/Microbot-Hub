@@ -41,7 +41,8 @@ public class BanksShopperScript extends Script {
 
         mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
             try {
-                if (!super.run() || !Microbot.isLoggedIn() || Rs2AntibanSettings.actionCooldownActive) return;
+                if (!super.run() || !Microbot.isLoggedIn() || Rs2AntibanSettings.actionCooldownActive)
+                    return;
 
                 if (initialPlayerLocation == null) {
                     initialPlayerLocation = Rs2Player.getWorldLocation();
@@ -50,7 +51,8 @@ public class BanksShopperScript extends Script {
                 switch (state) {
                     case SHOPPING:
                         boolean missingAllRequiredItems = plugin.getItemNames().stream().noneMatch((itemName) -> {
-                            if (itemName == null || itemName.isEmpty()) return false;
+                            if (itemName == null || itemName.isEmpty())
+                                return false;
                             if (itemName.matches("\\d+")) {
                                 return Rs2Inventory.hasItem(Integer.parseInt(itemName));
                             } else {
@@ -71,22 +73,29 @@ public class BanksShopperScript extends Script {
                         boolean outOfStock = false;
                         if (Rs2Shop.isOpen()) {
                             for (String itemName : plugin.getItemNames()) {
-                                if (!isRunning() || Microbot.pauseAllScripts.get()) break;
-                                if (itemName.length() <= 1) continue;
+                                if (!isRunning() || Microbot.pauseAllScripts.get())
+                                    break;
+                                if (itemName.length() <= 1)
+                                    continue;
 
                                 switch (plugin.getSelectedAction()) {
                                     case BUY:
                                         // Check if name is purely numeric or alphanumeric
                                         if (itemName.matches("\\d+")) {
-                                            outOfStock = !Rs2Shop.hasMinimumStock(Integer.parseInt(itemName), plugin.getMinStock());
-                                            if (outOfStock) continue;
-                                            successfullAction = processBuyAction(Integer.parseInt(itemName), plugin.getSelectedQuantity().toString());
+                                            outOfStock = !Rs2Shop.hasMinimumStock(Integer.parseInt(itemName),
+                                                    plugin.getMinStock());
+                                            if (outOfStock)
+                                                continue;
+                                            successfullAction = processBuyAction(Integer.parseInt(itemName),
+                                                    plugin.getSelectedQuantity().toString());
                                         } else {
                                             outOfStock = !Rs2Shop.hasMinimumStock(itemName, plugin.getMinStock());
-                                            if (outOfStock) continue;
-                                            successfullAction = processBuyAction(itemName, plugin.getSelectedQuantity().toString());
+                                            if (outOfStock)
+                                                continue;
+                                            successfullAction = processBuyAction(itemName,
+                                                    plugin.getSelectedQuantity().toString());
                                         }
-                                        if (Rs2Inventory.isFull()){
+                                        if (Rs2Inventory.isFull()) {
                                             System.out.println("Inventory is full, stopping buy action to bank.");
                                             if (!plugin.isBlastFurnaceOptimization()) {
                                                 Rs2Shop.closeShop();
@@ -96,22 +105,28 @@ public class BanksShopperScript extends Script {
                                         }
                                         break;
                                     case SELL:
-                                        if (Rs2Shop.isFull()) continue;
+                                        if (Rs2Shop.isFull())
+                                            continue;
                                         // Check if name is purely numeric or alphanumeric
                                         if (itemName.matches("\\d+")) {
-                                            while(isRunning() && processSellAction(Integer.parseInt(itemName), plugin.getSelectedQuantity().toString())){
+                                            while (isRunning() && processSellAction(Integer.parseInt(itemName),
+                                                    plugin.getSelectedQuantity().toString())) {
                                                 sleepGaussian(200, 40);
-                                                if (Rs2Shop.hasMinimumStock(Integer.parseInt(itemName), plugin.getMinStock())){
-                                                    System.out.println("Stop selling over the minimum stock for item: " + itemName);
+                                                if (Rs2Shop.hasMinimumStock(Integer.parseInt(itemName),
+                                                        plugin.getMinStock())) {
+                                                    System.out.println("Stop selling over the minimum stock for item: "
+                                                            + itemName);
                                                     successfullAction = true;
                                                     break;
                                                 }
                                             }
                                         } else {
-                                            while(isRunning() && processSellAction(itemName, plugin.getSelectedQuantity().toString())){
+                                            while (isRunning() && processSellAction(itemName,
+                                                    plugin.getSelectedQuantity().toString())) {
                                                 sleepGaussian(200, 40);
-                                                if (Rs2Shop.hasMinimumStock(itemName, plugin.getMinStock())){
-                                                    System.out.println("Stop selling over the minimum stock for item: " + itemName);
+                                                if (Rs2Shop.hasMinimumStock(itemName, plugin.getMinStock())) {
+                                                    System.out.println("Stop selling over the minimum stock for item: "
+                                                            + itemName);
                                                     successfullAction = true;
                                                     break;
                                                 }
@@ -126,7 +141,7 @@ public class BanksShopperScript extends Script {
                             if (successfullAction) {
                                 state = ShopperState.HOPPING;
                                 return;
-                            }else if (outOfStock){
+                            } else if (outOfStock) {
                                 System.out.println("Out of stock for all items, hopping worlds...");
                                 state = ShopperState.HOPPING;
                                 return;
@@ -138,7 +153,8 @@ public class BanksShopperScript extends Script {
                             if (!bankItemsWithoutWalkBack()) {
                                 return;
                             }
-                        } else if (!Rs2Bank.bankItemsAndWalkBackToOriginalPosition(plugin.getItemNames(), initialPlayerLocation)) {
+                        } else if (!Rs2Bank.bankItemsAndWalkBackToOriginalPosition(plugin.getItemNames(),
+                                initialPlayerLocation)) {
                             return;
                         }
                         state = ShopperState.SHOPPING;
@@ -176,33 +192,45 @@ public class BanksShopperScript extends Script {
      * Hops to a new world
      */
     private void hopWorld() {
+        System.out.println("[BanksShopper] Starting world hop sequence...");
         Rs2Shop.closeShop();
-        sleep(2400, 4800);
-        int world = Login.getRandomWorld(true, null);
-        boolean isHopped = Microbot.hopToWorld(world);
-        if (!isHopped) return;
-        boolean result = sleepUntil(() -> Rs2Widget.findWidget("Switch World") != null);
-        if (result) {
-            Rs2Keyboard.keyPress(KeyEvent.VK_SPACE);
-            sleepUntil(() -> Microbot.getClient().getGameState() == GameState.HOPPING);
-            sleepUntil(() -> Microbot.getClient().getGameState() == GameState.LOGGED_IN);
-        }
+
+        int currentWorld = Microbot.getClient().getWorld();
+        int targetWorld = currentWorld + 1;
+        System.out.println("[BanksShopper] Current world: " + currentWorld + ", target world: " + targetWorld);
+        Microbot.hopToWorld(targetWorld);
+        System.out.println("[BanksShopper] Hop command sent.");
+
+        // Wait for hop to complete
+        boolean enteredHoppingState = sleepUntil(() -> Microbot.getClient().getGameState() == GameState.HOPPING, 5000);
+        System.out.println(enteredHoppingState
+            ? "[BanksShopper] Client entered HOPPING state."
+            : "[BanksShopper] Client did not enter HOPPING state within timeout.");
+
+        boolean returnedToLoggedIn = sleepUntil(() -> Microbot.getClient().getGameState() == GameState.LOGGED_IN, 10000);
+        System.out.println(returnedToLoggedIn
+            ? "[BanksShopper] Hop completed and client returned to LOGGED_IN state."
+            : "[BanksShopper] Client did not return to LOGGED_IN state within timeout.");
+
+        // Brief pause after hopping
+        sleep(1500, 2500);
+        System.out.println("[BanksShopper] World hop sequence finished.");
     }
 
     private void hopWorldWithKeyboardShortcut() {
         Rs2Keyboard.keyHold(KeyEvent.VK_CONTROL);
         Rs2Keyboard.keyHold(KeyEvent.VK_SHIFT);
         Rs2Keyboard.keyHold(KeyEvent.VK_RIGHT);
-        sleepGaussian(80, 20);
-        Rs2Keyboard.keyRelease(KeyEvent.VK_RIGHT);
+        sleepGaussian(300, 150);
         Rs2Keyboard.keyRelease(KeyEvent.VK_SHIFT);
         Rs2Keyboard.keyRelease(KeyEvent.VK_CONTROL);
+        Rs2Keyboard.keyRelease(KeyEvent.VK_RIGHT);
         System.out.println("Sent world hop shortcut: Ctrl+Shift+Right");
     }
 
-
     /**
      * Processes the buy action for the specified item.
+     * 
      * @param itemName The name of the item to buy.
      * @param quantity The quantity of the item to buy.
      * @return true if bought successfully, false otherwise.
@@ -215,18 +243,19 @@ public class BanksShopperScript extends Script {
 
         boolean boughtItem = Rs2Shop.buyItem(itemName, quantity);
 
-        if (boughtItem){
+        if (boughtItem) {
             Rs2Inventory.waitForInventoryChanges(3000);
         }
 
-        System.out.println(boughtItem ? "Successfully bought " + quantity + " item: " + itemName : "Failed to buy " + quantity + " item ID: " + itemName);
+        System.out.println(boughtItem ? "Successfully bought " + quantity + " item: " + itemName
+                : "Failed to buy " + quantity + " item ID: " + itemName);
         return boughtItem;
     }
 
-
     /**
      * Processes the buy action for the specified item.
-     * @param itemID The ID of the item to buy.
+     * 
+     * @param itemID   The ID of the item to buy.
      * @param quantity The quantity of the item to buy.
      * @return true if bought successfully, false otherwise.
      */
@@ -238,16 +267,18 @@ public class BanksShopperScript extends Script {
 
         boolean boughtItem = Rs2Shop.buyItem(itemID, quantity);
 
-        if (boughtItem){
+        if (boughtItem) {
             Rs2Inventory.waitForInventoryChanges(3000);
         }
 
-        System.out.println(boughtItem ? "Successfully bought " + quantity + " item ID: " + itemID : "Failed to buy " + quantity + " item ID: " + itemID);
+        System.out.println(boughtItem ? "Successfully bought " + quantity + " item ID: " + itemID
+                : "Failed to buy " + quantity + " item ID: " + itemID);
         return boughtItem;
     }
 
     /**
      * Processes the sell action for the specified item.
+     * 
      * @param itemName The name of the item to sell.
      * @param quantity The quantity of the item to sell.
      * @return true if sold successfully, false otherwise.
@@ -255,7 +286,8 @@ public class BanksShopperScript extends Script {
     private boolean processSellAction(String itemName, String quantity) {
         if (Rs2Inventory.hasItem(itemName)) {
             boolean soldItem = Rs2Inventory.sellItem(itemName, quantity);
-            System.out.println(soldItem ? "Successfully sold " + quantity + " " + itemName : "Failed to sell " + quantity + " " + itemName);
+            System.out.println(soldItem ? "Successfully sold " + quantity + " " + itemName
+                    : "Failed to sell " + quantity + " " + itemName);
             return soldItem;
         }
         System.out.println("Item " + itemName + " not found in inventory.");
@@ -264,14 +296,16 @@ public class BanksShopperScript extends Script {
 
     /**
      * Processes the sell action for the specified item.
-     * @param itemID The name of the item to sell.
+     * 
+     * @param itemID   The name of the item to sell.
      * @param quantity The quantity of the item to sell.
      * @return true if sold successfully, false otherwise.
      */
     private boolean processSellAction(int itemID, String quantity) {
         if (Rs2Inventory.hasItem(itemID)) {
             boolean soldItem = Rs2Inventory.sellItem(itemID, quantity);
-            System.out.println(soldItem ? "Successfully sold " + quantity + ", item ID:" + itemID : "Failed to sell " + quantity + ", item ID: " + itemID);
+            System.out.println(soldItem ? "Successfully sold " + quantity + ", item ID:" + itemID
+                    : "Failed to sell " + quantity + ", item ID: " + itemID);
             return soldItem;
         }
         System.out.println("Item ID" + itemID + " not found in inventory.");
