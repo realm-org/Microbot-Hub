@@ -230,7 +230,7 @@ public class GotrScript extends Script {
     private boolean waitingForGameToStart(int timeToStart) {
         if (isInHugeMine()) return false;
 
-        if (getStartTimer() > Rs2Random.randomGaussian(35, Rs2Random.between(1, 5)) || getStartTimer() == -1 || timeToStart > 10) {
+        if (getStartTimer() > Rs2Random.randomGaussian(25, Rs2Random.between(1, 3)) || getStartTimer() == -1 || timeToStart > 13) {
 
             // Only take cells if we don't already have them
             if (!Rs2Inventory.hasItem("Uncharged cell")) {
@@ -359,6 +359,9 @@ public class GotrScript extends Script {
     }
 
     private boolean craftGuardianEssences() {
+        if (!Rs2Inventory.hasItem(GUARDIAN_FRAGMENTS)) {
+            return false;
+        }
         if (Rs2GameObject.interact(ObjectID.WORKBENCH_43754)) {
             state = GotrState.CRAFT_GUARDIAN_ESSENCE;
             sleep(Rs2Random.randomGaussian(Rs2Random.between(600, 900), Rs2Random.between(150, 300)));
@@ -388,8 +391,14 @@ public class GotrScript extends Script {
         return false;
     }
 
+    private boolean hasConfiguredEmptySlots() {
+        return Rs2Inventory.emptySlotCount() > config.emptySlotsToKeep();
+    }
+
     private boolean isOutOfFragments() {
-        if ((!Rs2Inventory.hasItem(GUARDIAN_FRAGMENTS) && !Rs2Inventory.isFull()) || (getTimeSincePortal() > 85 && !Rs2Inventory.hasItem(GUARDIAN_ESSENCE))) {
+        boolean noFragments = !Rs2Inventory.hasItem(GUARDIAN_FRAGMENTS);
+        boolean noEssence = !Rs2Inventory.hasItem(GUARDIAN_ESSENCE) && !Rs2Inventory.anyPouchFull();
+        if ((noFragments && (hasConfiguredEmptySlots() || noEssence)) || (getTimeSincePortal() > 85 && !Rs2Inventory.hasItem(GUARDIAN_ESSENCE))) {
             shouldMineGuardianRemains = true;
             if(!Rs2Inventory.hasItem(GUARDIAN_FRAGMENTS))
                 log("Memorize that we no longer have guardian fragments...");
@@ -405,7 +414,7 @@ public class GotrScript extends Script {
             TileObject rcAltar = findRcAltar();
             if (rcAltar != null) {
                 if (Rs2Player.isMoving()) return true;
-                if (Rs2Inventory.anyPouchFull() && !Rs2Inventory.isFull()) {
+                if (Rs2Inventory.anyPouchFull() && hasConfiguredEmptySlots()) { //test when back from gym
                     Rs2Inventory.emptyPouches();
                     Rs2Inventory.waitForInventoryChanges(5000);
                     sleep(Rs2Random.randomGaussian(350, 150));
@@ -724,17 +733,20 @@ public class GotrScript extends Script {
                     .collect(Collectors.toList());
         }
 
-        if ((config.Mode() == Mode.BALANCED && elementalPoints < catalyticPoints) || config.Mode() == Mode.ELEMENTAL) {
-            Microbot.log(elementalPoints < catalyticPoints
-                    ? "We have " + elementalPoints + " elemental points, looking for elemental altar..."
-                    : "We have " + catalyticPoints +" catalytic points, looking for catalytic altar...");
+        if (config.Mode() == Mode.ELEMENTAL || config.Mode() == Mode.CATALYTIC || config.Mode() == Mode.BALANCED) {
+            boolean preferElemental = config.Mode() == Mode.ELEMENTAL
+                    || (config.Mode() == Mode.BALANCED && elementalPoints <= catalyticPoints);
 
-            Microbot.log("Sorting for BALANCED/ELEMENTAL mode (" +
-                    (elementalPoints < catalyticPoints ? "Elemental priority" : "Catalytic priority") + ")");
+            Microbot.log(preferElemental
+                    ? "We have " + elementalPoints + " elemental points, looking for elemental altar..."
+                    : "We have " + catalyticPoints + " catalytic points, looking for catalytic altar...");
+
+            Microbot.log("Sorting for " + config.Mode() + " mode (" +
+                    (preferElemental ? "Elemental priority" : "Catalytic priority") + ")");
 
             return availableAltars.stream()
                     .sorted(
-                            (elementalPoints < catalyticPoints)
+                            preferElemental
                                     ? Comparator.comparingInt(TileObject::getId)
                                     : Comparator.comparingInt(TileObject::getId).reversed()
                     )

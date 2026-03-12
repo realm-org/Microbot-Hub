@@ -4,6 +4,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigInformation;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.Range;
 import net.runelite.client.plugins.microbot.gotr.data.Mode;
 
 @ConfigGroup("gotr")
@@ -40,11 +41,25 @@ public interface GotrConfig extends Config {
         return 20;
     }
 
+    @Range(
+            min = 0,
+            max = 5
+    )
+    @ConfigItem(
+            keyName = "emptySlotsToKeep",
+            name = "Empty slots to keep",
+            description = "How many inventory spaces to keep empty before considering inventory effectively full",
+            position = 3
+    )
+    default int emptySlotsToKeep() {
+        return 0;
+    }
+
     @ConfigItem(
             keyName = "shouldDepositRunes",
             name = "Deposit runes?",
             description = "Should you deposit runes into the deposit pool?",
-            position = 3
+            position = 4
     )
     default boolean shouldDepositRunes() {
         return true;
@@ -54,7 +69,7 @@ public interface GotrConfig extends Config {
             keyName = "useLunarSpellbook",
             name = "Use lunar spellbook",
             description = "Switch to lunar spellbook for NPC Contact spell to repair pouches. Disable if using Cordelia repair with pearls.",
-            position = 4
+            position = 5
     )
     default boolean useLunarSpellbook() {
         return true;
@@ -64,7 +79,7 @@ public interface GotrConfig extends Config {
             keyName = "useInventorySetup",
             name = "Use inventory setup",
             description = "Use a specific inventory setup instead of progressive equipment management",
-            position = 5
+            position = 6
     )
     default boolean useInventorySetup() {
         return false;
@@ -74,7 +89,7 @@ public interface GotrConfig extends Config {
             keyName = "inventorySetupName",
             name = "Inventory setup name",
             description = "Name of the inventory setup to use (only if 'Use inventory setup' is enabled)",
-            position = 6
+            position = 7
     )
     default String inventorySetupName() {
         return "";
