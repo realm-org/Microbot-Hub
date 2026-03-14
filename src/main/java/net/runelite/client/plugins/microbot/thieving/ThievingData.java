@@ -11,7 +11,18 @@ import java.util.Arrays;
 public final class ThievingData {
     public static final WorldPoint NULL_WORLD_POINT = new WorldPoint(-1,-1,-1);
     public static final WorldPoint OUTSIDE_HALLOWED_BANK = new WorldPoint(3654,3384,0);
+    /** Farming Guild seed vault object ID */
+    public static final int SEED_VAULT_OBJECT_ID = 26206;
+    /** Approximate tile in front of the Farming Guild seed vault */
+    public static final WorldPoint SEED_VAULT_LOCATION = new WorldPoint(1243, 3740, 0);
     public static final WorldArea ARDOUGNE_AREA = new WorldArea(2649, 3280, 7, 8, 0);
+
+    /** Farming Guild area (all tiers) */
+    public static final WorldArea FARMING_GUILD_AREA = new WorldArea(1215, 3715, 55, 60, 0);
+    /** NPC IDs for the Master Farmers in the southern (low-level accessible) section of the Farming Guild */
+    public static final Set<Integer> FARMING_GUILD_SOUTH_NPC_IDS = Set.of(11940, 5731);
+    /** Farming level required to access the full (upper) section of the Farming Guild */
+    public static final int FARMING_GUILD_MID_FARMING_LEVEL = 85;
 
     public static final Set<String> VYRE_SET = Set.of(
             "vyre noble shoes",

@@ -50,6 +50,17 @@ public interface ThievingConfig extends Config {
         return false;
     }
 
+    @ConfigItem(
+            keyName = "farmingGuildMasterFarmer",
+            name = "Farming Guild Master Farmer",
+            description = "When thieving Master Farmers, target only those inside the Farming Guild. If your Farming level is below 65, focuses on the master farmer in the south (around y=3728).",
+            position = 2,
+            section = generalSection
+    )
+    default boolean farmingGuildMasterFarmer() {
+        return false;
+    }
+
     @ConfigSection(
             name = "Buffs",
             description = "Buffs and spell-casting options.",
@@ -212,5 +223,16 @@ public interface ThievingConfig extends Config {
     )
     default String DoNotDropItemList() {
         return "";
+    }
+
+    @ConfigItem(
+            keyName = "useSeedVault",
+            name = "Use Seed Vault",
+            description = "Walk to the Farming Guild seed vault to store seeds instead of dropping items when inventory is full.",
+            position = 4,
+            section = coinPouchSection
+    )
+    default boolean useSeedVault() {
+        return false;
     }
 }

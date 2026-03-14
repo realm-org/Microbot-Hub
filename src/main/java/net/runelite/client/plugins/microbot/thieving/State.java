@@ -11,6 +11,7 @@ public enum State {
     LOOT,
     EAT(false),
     DROP(false),
+    SEED_VAULT(false),
     SHADOW_VEIL(false),
     PICKPOCKET,
     HOP,

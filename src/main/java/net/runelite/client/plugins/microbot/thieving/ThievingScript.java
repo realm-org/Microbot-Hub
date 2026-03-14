@@ -35,9 +35,13 @@ import net.runelite.client.plugins.microbot.util.player.Rs2Player;
 import net.runelite.client.plugins.microbot.util.security.Login;
 import net.runelite.client.plugins.microbot.util.walker.Rs2Walker;
 import net.runelite.client.plugins.microbot.util.walker.WalkerState;
+import net.runelite.client.plugins.microbot.util.keyboard.Rs2Keyboard;
 import net.runelite.client.plugins.microbot.util.prayer.Rs2Prayer;
 import net.runelite.client.plugins.microbot.util.prayer.Rs2PrayerEnum;
+import net.runelite.client.plugins.microbot.util.widget.Rs2Widget;
+import net.runelite.api.widgets.WidgetID;
 import net.runelite.client.plugins.skillcalculator.skills.MagicAction;
+import java.awt.event.KeyEvent;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -181,6 +185,17 @@ ThievingNpcStrategy getActiveStrategy() {
                 case ELVES:
                     filter = validateName(ThievingData.ELVES::contains);
                     break;
+                case MASTER_FARMER:
+                    filter = validateName(name -> name.toLowerCase().contains(finalNpc.getName()));
+                    if (config.farmingGuildMasterFarmer()) {
+                        int farmingLevel = Microbot.getClient().getRealSkillLevel(Skill.FARMING);
+                        if (farmingLevel < ThievingData.FARMING_GUILD_MID_FARMING_LEVEL) {
+                            filter = filter.and(npc -> ThievingData.FARMING_GUILD_SOUTH_NPC_IDS.contains(npc.getId()));
+                        } else {
+                            filter = filter.and(npc -> ThievingData.FARMING_GUILD_AREA.contains(npc.getWorldLocation()));
+                        }
+                    }
+                    break;
                 default:
                     filter = validateName(name -> name.toLowerCase().contains(finalNpc.getName()));
                     break;
@@ -301,7 +316,7 @@ ThievingNpcStrategy getActiveStrategy() {
             }
         }
 
-        if (Rs2Inventory.isFull()) return applyOverride(State.DROP);
+        if (Rs2Inventory.isFull()) return applyOverride(config.useSeedVault() ? State.SEED_VAULT : State.DROP);
 
         if (isNpcNull(thievingNpc) && (thievingNpc = getThievingNpcCache()) == null && shouldHop()) return applyOverride(State.HOP);
 
@@ -505,6 +520,9 @@ ThievingNpcStrategy getActiveStrategy() {
             case DROP:
                 dropAllExceptImportant();
                 if (Rs2Inventory.isFull()) Rs2Player.eatAt(99);
+                return;
+            case SEED_VAULT:
+                useSeedVault();
                 return;
             case HOP:
                 if (shouldHop()) {
@@ -1031,6 +1049,22 @@ ThievingNpcStrategy getActiveStrategy() {
             sleepUntilWithInterrupt(() -> !Rs2Player.isMoving(), 1_200);
         }
         DOOR_TIMER.set();
+    }
+
+    private void useSeedVault() {
+        if (!walkTo("Walk to seed vault", ThievingData.SEED_VAULT_LOCATION, 3)) return;
+        if (!Rs2Widget.isWidgetVisible(WidgetID.SEED_VAULT_GROUP_ID, 0)) {
+            if (!Rs2GameObject.interact(ThievingData.SEED_VAULT_OBJECT_ID, "Use")) return;
+            if (!sleepUntil(() -> Rs2Widget.isWidgetVisible(WidgetID.SEED_VAULT_GROUP_ID, 0), 3_000)) {
+                log.warn("Seed vault did not open");
+                return;
+            }
+        }
+        Rs2Widget.clickWidget(WidgetID.SEED_VAULT_GROUP_ID, 25);
+        Rs2Inventory.waitForInventoryChanges(2_500);
+        Rs2Keyboard.keyPress(KeyEvent.VK_ESCAPE);
+        sleepUntil(() -> !Rs2Widget.isWidgetVisible(WidgetID.SEED_VAULT_GROUP_ID, 0), 1_500);
+        if (startingLocation != null) walkTo("Return to thieving spot", startingLocation, 3);
     }
 
     private void dropAllExceptImportant() {
