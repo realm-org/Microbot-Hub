@@ -74,7 +74,7 @@ public class JewelryScript extends Script {
                         Rs2Bank.preHover();
                         break;
                     case BANKING:
-                        boolean isBankOpen = Rs2Bank.isNearBank(15) ? Rs2Bank.openBank() : Rs2Bank.walkToBankAndUseBank();
+                        boolean isBankOpen = Rs2Bank.isNearBank(21) ? Rs2Bank.openBank() : Rs2Bank.walkToBankAndUseBank();
                         
                         if (!isBankOpen || !Rs2Bank.isOpen()) return;
                         
