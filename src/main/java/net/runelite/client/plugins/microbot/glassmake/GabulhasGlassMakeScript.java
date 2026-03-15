@@ -73,7 +73,7 @@ public class GabulhasGlassMakeScript extends Script {
     }
 
     private void takeBreak() {
-        if (Rs2Random.nextInt(0, 20, 1, true) == 30) {
+        if (Rs2Random.nextInt(0, 20, 1, true) == 20) {
             sleep(1000, 20000);
         }
 

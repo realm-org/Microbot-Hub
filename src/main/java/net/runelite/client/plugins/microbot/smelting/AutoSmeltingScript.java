@@ -13,9 +13,11 @@ import net.runelite.client.plugins.microbot.util.equipment.Rs2Equipment;
 import net.runelite.client.plugins.microbot.util.gameobject.Rs2GameObject;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.microbot.util.player.Rs2Player;
+import net.runelite.client.plugins.microbot.util.keyboard.Rs2Keyboard;
 import net.runelite.client.plugins.microbot.util.walker.Rs2Walker;
 import net.runelite.client.plugins.microbot.util.widget.Rs2Widget;
 
+import java.awt.event.KeyEvent;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -59,7 +61,7 @@ public class AutoSmeltingScript extends Script {
                     }
                     Rs2Player.waitForWalking();
                     sleep(600,1200);
-                    if (!Rs2Player.isInMemberWorld()) {
+                    if (!Rs2Player.isInMemberWorld() || config.SELECTED_BAR_TYPE().getId() == ItemID.MOLTEN_GLASS) {
                         Rs2Bank.depositAll();
                     } else if (Rs2Player.isMember()) Rs2Bank.depositAllExcept(coalBag);
                     if (config.SELECTED_BAR_TYPE().getId() == ItemID.IRON_BAR && Rs2Bank.hasItem(ItemID.RING_OF_FORGING) && !Rs2Equipment.isWearing(ItemID.RING_OF_FORGING)) {
@@ -110,16 +112,14 @@ public class AutoSmeltingScript extends Script {
                 }
                 GameObject oneClickFurnace = Rs2GameObject.findObject("furnace", true, 20, false, initialPlayerLocation);
                 if (oneClickFurnace != null) {
-                    if (Rs2Bank.isOpen()){
-                        Rs2Bank.closeBank();
-                        sleepUntil(() -> !Rs2Bank.isOpen(), 1000);
-                    }
                     Rs2GameObject.interact(oneClickFurnace, "smelt");
                     sleepUntil(Rs2Player::isMoving, 1000);
                     sleepUntil(() -> !Rs2Player.isMoving(), 4000);
-                    Rs2Widget.sleepUntilHasWidgetText("What would you like to smelt?", 270, 5, false, 4000);
-                    Rs2Widget.clickWidget(config.SELECTED_BAR_TYPE().getName());
-                    Rs2Widget.sleepUntilHasNotWidgetText("What would you like to smelt?", 270, 5, false, 4000);
+                    String widgetText1 = config.SELECTED_BAR_TYPE().getId() == ItemID.MOLTEN_GLASS ? "How many do you wish to make?" : "What would you like to smelt?";
+                    Rs2Widget.sleepUntilHasWidgetText(widgetText1, 270, 5, false, 5000);
+                    sleep(300, 950);
+                    Rs2Keyboard.keyPress(KeyEvent.VK_SPACE);
+                    Rs2Widget.sleepUntilHasNotWidgetText(widgetText1, 270, 5, false, 5000);
                     Rs2Antiban.actionCooldown();
                     Rs2Antiban.takeMicroBreakByChance();
                     return;
@@ -137,9 +137,10 @@ public class AutoSmeltingScript extends Script {
                 GameObject furnace = Rs2GameObject.findObject("furnace",true,20,false,initialPlayerLocation);
                 if (furnace != null) {
                     Rs2GameObject.interact(furnace, "smelt");
-                    Rs2Widget.sleepUntilHasWidgetText("What would you like to smelt?", 270, 5, false, 4000);
-                    Rs2Widget.clickWidget(config.SELECTED_BAR_TYPE().getName());
-                    Rs2Widget.sleepUntilHasNotWidgetText("What would you like to smelt?", 270, 5, false, 4000);
+                    String widgetText2 = config.SELECTED_BAR_TYPE().getId() == ItemID.MOLTEN_GLASS ? "How many do you wish to make?" : "What would you like to smelt?";
+                    Rs2Widget.sleepUntilHasWidgetText(widgetText2, 270, 5, false, 5000);
+                    Rs2Keyboard.keyPress(KeyEvent.VK_SPACE);
+                    Rs2Widget.sleepUntilHasNotWidgetText(widgetText2, 270, 5, false, 5000);
                     Rs2Antiban.actionCooldown();
                     Rs2Antiban.takeMicroBreakByChance();
                 }
