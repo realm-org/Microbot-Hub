@@ -148,7 +148,6 @@ public class GabulhasKarambwansScript extends Script {
         }
 
 
-
         Rs2Bank.closeBank();
         sleepUntil(() -> !Rs2Bank.isOpen(), 3000);
     }
@@ -176,12 +175,12 @@ public class GabulhasKarambwansScript extends Script {
             }
         } else {
             Rs2Walker.walkTo(zanarisRingPoint, 3);
-            Rs2Player.waitForWalking();
+            sleepUntil(() -> Rs2Player.distanceTo(zanarisRingPoint) <= 8, 15000);
             
             if (Rs2GameObject.interact(FAIRY_RING_ID, "Last-destination (DKP)")) {
                 waitTillPlayerNextToFishingSpot();
             } else {
-                Rs2Player.waitForWalking();
+                sleepUntil(() -> Rs2Player.isMoving(), 5000);
             }
         }
     }

@@ -935,6 +935,13 @@ ThievingNpcStrategy getActiveStrategy() {
     }
 
     private void bankAndEquip() {
+        if (config.useSeedVault() && !Rs2Bank.isOpen() && hasSeedsInInventory()) {
+            final WorldPoint myLoc = Rs2Player.getWorldLocation();
+            if (myLoc != null && myLoc.distanceTo(ThievingData.SEED_VAULT_LOCATION) <= 20) {
+                log.debug("Depositing seeds to vault before banking");
+                depositToSeedVault();
+            }
+        }
         if (!Rs2Bank.isOpen()) {
             BankLocation bank;
             if (config.THIEVING_NPC() == ThievingNpc.VYRES && ThievingData.OUTSIDE_HALLOWED_BANK.distanceTo(Rs2Player.getWorldLocation()) < 20) {
@@ -1051,8 +1058,16 @@ ThievingNpcStrategy getActiveStrategy() {
         DOOR_TIMER.set();
     }
 
-    private void useSeedVault() {
-        if (!walkTo("Walk to seed vault", ThievingData.SEED_VAULT_LOCATION, 3)) return;
+    private boolean hasSeedsInInventory() {
+        return Rs2Inventory.all().stream().anyMatch(item -> {
+            if (item == null || item.getName() == null) return false;
+            final String name = item.getName().toLowerCase();
+            return name.endsWith(" seed") || name.endsWith(" seeds");
+        });
+    }
+
+    /** Opens the seed vault and deposits all seeds. Does not walk to the vault or return to starting location. */
+    private void depositToSeedVault() {
         if (!Rs2Widget.isWidgetVisible(WidgetID.SEED_VAULT_GROUP_ID, 0)) {
             if (!Rs2GameObject.interact(ThievingData.SEED_VAULT_OBJECT_ID, "Use")) return;
             if (!sleepUntil(() -> Rs2Widget.isWidgetVisible(WidgetID.SEED_VAULT_GROUP_ID, 0), 3_000)) {
@@ -1064,6 +1079,14 @@ ThievingNpcStrategy getActiveStrategy() {
         Rs2Inventory.waitForInventoryChanges(2_500);
         Rs2Keyboard.keyPress(KeyEvent.VK_ESCAPE);
         sleepUntil(() -> !Rs2Widget.isWidgetVisible(WidgetID.SEED_VAULT_GROUP_ID, 0), 1_500);
+    }
+
+    private void useSeedVault() {
+        final WorldPoint myLoc = Rs2Player.getWorldLocation();
+        if (myLoc == null || myLoc.distanceTo(ThievingData.SEED_VAULT_LOCATION) > 20) {
+            if (!walkTo("Walk to seed vault", ThievingData.SEED_VAULT_LOCATION, 20)) return;
+        }
+        depositToSeedVault();
         if (startingLocation != null) walkTo("Return to thieving spot", startingLocation, 3);
     }
 
