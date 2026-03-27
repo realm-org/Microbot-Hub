@@ -137,7 +137,8 @@ public interface BarrowsConfig extends Config {
 
     enum selectedToBarrowsTPMethod {
         Tablet(ItemID.TELETAB_BARROWS, "Barrows teleport"),
-        POH(ItemID.POH_TABLET_TELEPORTTOHOUSE, "Teleport to house");
+        POH(ItemID.POH_TABLET_TELEPORTTOHOUSE, "Teleport to house"),
+        Walk(-1, "Walk to Barrows");
 
         private final int id;
         private final String name;
@@ -209,6 +210,57 @@ public interface BarrowsConfig extends Config {
     )
     default boolean shouldPrayAgainstWeakerBrothers() {
         return true;
+    }
+
+    @ConfigItem(
+            keyName = "rangeAhrim",
+            name = "Range Ahrim",
+            description = "Switch to ranged gear when fighting Ahrim",
+            position = 15
+    )
+    default boolean rangeAhrim() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "rangeAhrimGear",
+            name = "Range Gear (Ahrim)",
+            description = "Comma-separated item names to equip for Ahrim (e.g. Magic shortbow,Leather body)",
+            position = 16
+    )
+    default String rangeAhrimGear() {
+        return "";
+    }
+
+    @ConfigItem(
+            keyName = "mageGearSwapBack",
+            name = "Mage Gear (swap back)",
+            description = "Comma-separated item names to re-equip after Ahrim (e.g. Staff of fire,Book of darkness)",
+            position = 17
+    )
+    default String mageGearSwapBack() {
+        return "";
+    }
+
+    @ConfigItem(
+            keyName = "eatAtHealthPercent",
+            name = "Eat at HP %",
+            description = "Eat food when health drops below this percentage",
+            position = 18
+    )
+    @Range(min = 10, max = 90)
+    default int eatAtHealthPercent() {
+        return 70;
+    }
+
+    @ConfigItem(
+            keyName = "eatForSpace",
+            name = "Eat for inventory space",
+            description = "Eat food before looting chest to free up inventory slots",
+            position = 19
+    )
+    default boolean eatForSpace() {
+        return false;
     }
 
 }
