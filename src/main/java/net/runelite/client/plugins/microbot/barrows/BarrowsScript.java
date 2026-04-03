@@ -848,7 +848,7 @@ public class BarrowsScript extends Script {
             // We're not in the mound yet.
             randomMoundTile = moundArea.toWorldPointList().get(Rs2Random.between(0,(totalTiles-1)));
 
-            if(Rs2Player.getWorldLocation().distanceTo(randomMoundTile) < Rs2Random.between(5,12)){
+            if(Rs2Player.getWorldLocation().distanceTo(randomMoundTile) < Rs2Random.between(7,14)){
                 Rs2Walker.walkFastCanvas(randomMoundTile);
                 Rs2Player.waitForWalking();
             } else {
@@ -878,8 +878,10 @@ public class BarrowsScript extends Script {
                     }
                 }
 
-                Rs2Walker.walkCanvas(randomMoundTile);
-                Rs2Player.waitForWalking();
+                if  (!Rs2Player.isMoving()) {
+                    Rs2Walker.walkCanvas(randomMoundTile);
+                    Rs2Player.waitForWalking();
+                }
 
                 if(moundAttempts >= 10){
                     Microbot.log("Stuck trying to reach mound, using webwalker.");

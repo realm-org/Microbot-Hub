@@ -292,6 +292,7 @@ public class AutoWoodcuttingScript extends Script {
                 break;
             case BURN_CAMPFIRE:
             case BURN:
+                woodcuttingScriptState = WoodcuttingScriptState.FIREMAKING;
                 burnLog(config);
 
                 if (Rs2Inventory.contains(getActiveTree().getLog())) return;
