@@ -182,10 +182,36 @@ public interface BarrowsConfig extends Config {
     }
 
     @ConfigItem(
+            keyName = "combatSpell",
+            name = "Combat Spell",
+            description = "Which wind spell to use (determines which runes to bring)",
+            position = 12
+    )
+    default CombatSpell combatSpell() {
+        return CombatSpell.WIND_SURGE;
+    }
+
+    enum CombatSpell {
+        WIND_BLAST("Death rune"),
+        WIND_WAVE("Blood rune"),
+        WIND_SURGE("Wrath rune");
+
+        private final String runeName;
+
+        CombatSpell(String runeName) {
+            this.runeName = runeName;
+        }
+
+        public String getRuneName() {
+            return runeName;
+        }
+    }
+
+    @ConfigItem(
             keyName = "minRuneAmount",
             name = "Min Runes",
             description = "Minimum amount of runes before banking",
-            position = 12
+            position = 13
     )
     @Range(min = 50, max = 1000)
     default int minRuneAmount() {
@@ -196,7 +222,7 @@ public interface BarrowsConfig extends Config {
             keyName = "shouldGainRP",
             name = "Aim for 86+% rewards potential",
             description = "Should we gain additional RP other than the barrows brothers?",
-            position = 13
+            position = 14
     )
     default boolean shouldGainRP() {
         return false;
@@ -206,7 +232,7 @@ public interface BarrowsConfig extends Config {
             keyName = "shouldPrayAgainstWeakerBrothers",
             name = "Pray against Torag, Verac, and Guthans?",
             description = "Should we Pray against Torag, Verac, and Guthans?",
-            position = 14
+            position = 15
     )
     default boolean shouldPrayAgainstWeakerBrothers() {
         return true;
@@ -216,7 +242,7 @@ public interface BarrowsConfig extends Config {
             keyName = "rangeAhrim",
             name = "Range Ahrim",
             description = "Switch to ranged gear when fighting Ahrim",
-            position = 15
+            position = 16
     )
     default boolean rangeAhrim() {
         return false;
@@ -226,7 +252,7 @@ public interface BarrowsConfig extends Config {
             keyName = "rangeAhrimGear",
             name = "Range Gear (Ahrim)",
             description = "Comma-separated item names to equip for Ahrim (e.g. Magic shortbow,Leather body)",
-            position = 16
+            position = 17
     )
     default String rangeAhrimGear() {
         return "";
@@ -236,7 +262,7 @@ public interface BarrowsConfig extends Config {
             keyName = "mageGearSwapBack",
             name = "Mage Gear (swap back)",
             description = "Comma-separated item names to re-equip after Ahrim (e.g. Staff of fire,Book of darkness)",
-            position = 17
+            position = 18
     )
     default String mageGearSwapBack() {
         return "";
@@ -246,7 +272,7 @@ public interface BarrowsConfig extends Config {
             keyName = "eatAtHealthPercent",
             name = "Eat at HP %",
             description = "Eat food when health drops below this percentage",
-            position = 18
+            position = 19
     )
     @Range(min = 10, max = 90)
     default int eatAtHealthPercent() {
@@ -257,7 +283,7 @@ public interface BarrowsConfig extends Config {
             keyName = "eatForSpace",
             name = "Eat for inventory space",
             description = "Eat food before looting chest to free up inventory slots",
-            position = 19
+            position = 20
     )
     default boolean eatForSpace() {
         return false;

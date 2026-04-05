@@ -74,6 +74,8 @@ public class BarrowsScript extends Script {
     public static List<String> barrowsPieces = new ArrayList<>();
     private ScheduledFuture<?> WalkToTheChestFuture;
 
+    private BarrowsConfig config;
+
     @Inject
     Rs2NpcCache rs2NpcCache;
     @Inject Rs2TileItemCache rs2TileItemCache;
@@ -83,6 +85,7 @@ public class BarrowsScript extends Script {
 
 
     public boolean run(BarrowsConfig config, BarrowsPlugin plugin) {
+        this.config = config;
         Microbot.enableAutoRunOn = false;
         mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
             try {
@@ -132,7 +135,7 @@ public class BarrowsScript extends Script {
                     usingPoweredStaffs = true;
                 } else {
                     usingPoweredStaffs = false;
-                    gettheRune();
+                    neededRune = config.combatSpell().getRuneName();
                     minRuneAmt = config.minRuneAmount();
                     if(!Rs2Magic.getSpellbook().equals(Rs2Spellbook.MODERN)){
                         swapTheSpellbook();
@@ -150,7 +153,9 @@ public class BarrowsScript extends Script {
                     }
                 }
 
-                outOfSupplies(config);
+                if(!shouldBank) {
+                    outOfSupplies(config);
+                }
 
                 if(config.selectedToBarrowsTPMethod().getToBarrowsTPMethodItemID() == ItemID.TELEPORT_TO_HOUSE) {
                     if (!inTunnels && !shouldBank && Rs2Player.getWorldLocation().distanceTo(new WorldPoint(3573, 3296, 0)) > 60) {
@@ -169,6 +174,12 @@ public class BarrowsScript extends Script {
                 if(config.selectedToBarrowsTPMethod() == BarrowsConfig.selectedToBarrowsTPMethod.Walk) {
                     if (!inTunnels && !shouldBank && Rs2Player.getWorldLocation().distanceTo(new WorldPoint(3550, 3285, 0)) > 30) {
                         walkToBarrows();
+                        // Drop rotten food received from the swamp boat
+                        while(Rs2Inventory.contains("Rotten food")) {
+                            if(!super.isRunning()) break;
+                            Rs2Inventory.drop("Rotten food");
+                            sleep(150, 350);
+                        }
                         return;
                     }
                 }
@@ -278,9 +289,16 @@ public class BarrowsScript extends Script {
                                 Microbot.log("Searching the Sarcophagus");
                                 if (!super.isRunning()) break;
 
+                                // Ensure sarcophagus is on-screen before clicking
+                                LocalPoint sarcLocal = LocalPoint.fromWorld(Microbot.getClient().getTopLevelWorldView(), sarc.getWorldLocation());
+                                if (sarcLocal != null && !Rs2Camera.isTileOnScreen(sarcLocal)) {
+                                    Rs2Camera.turnTo(sarcLocal);
+                                    sleep(300, 600);
+                                }
 
                                 if (sarc.click("Search")) {
                                     // Activate prayer after clicking the sarcophagus
+                                    sleepGaussian(400, 1200);
                                     if(config.shouldPrayAgainstWeakerBrothers()){
                                         activatePrayer(brother.getWhatToPray());
                                     } else {
@@ -409,9 +427,10 @@ public class BarrowsScript extends Script {
                     Rs2TileObjectModel barrowsChest = rs2TileObjectCache.query().withId(20973).nearest();
 
                     if(barrowsChest != null &&
-                            (barrowsChest.getWorldLocation().distanceTo(Rs2Player.getWorldLocation()) < 5)){
+                            (barrowsChest.getWorldLocation().distanceTo(Rs2Player.getWorldLocation()) <= 6)){
                         //chest ID: 20973
                         stopFutureWalker();
+
 
                         // Eat food to free inventory space before looting
                         if(config.eatForSpace()) {
@@ -500,8 +519,6 @@ public class BarrowsScript extends Script {
                     if(!Rs2Bank.isOpen()){
                         //stop the walker
                         stopFutureWalker();
-                        //tele out
-                        outOfSupplies(config);
                         //use rejuv pool before banking
                         reJfount();
                         //walk to and open the bank
@@ -512,10 +529,10 @@ public class BarrowsScript extends Script {
                         int ourFoodsID = ourfood.getId();
                         String ourfoodsname = ourfood.getName();
 
-                        if(Rs2Inventory.contains(it->it!=null&&it.getName().contains("'s") && !it.getName().contains("ava"))){
-                            Rs2ItemModel piece = Rs2Inventory.get(it->it!=null&&it.getName().contains("'s") && !it.getName().contains("ava"));
+                        if(Rs2Inventory.contains(it->it!=null&&it.getName().contains("'s") && !it.getName().contains("Ava"))){
+                            Rs2ItemModel piece = Rs2Inventory.get(it->it!=null&&it.getName().contains("'s") && !it.getName().contains("Ava"));
 
-                            if(piece!=null){
+                            if(piece != null){
                                 barrowsPieces.add(piece.getName());
                                 if(barrowsPieces.contains("Nothing yet.")){
                                     barrowsPieces.remove("Nothing yet.");
@@ -536,7 +553,7 @@ public class BarrowsScript extends Script {
                                 if(!item.trim().isEmpty()) keepItems.add(item.trim());
                             }
                         }
-                        Rs2Bank.depositAllExcept(keepItems.toArray(new String[0]));
+                        Rs2Bank.depositAll();
 
                         if(!usingPoweredStaffs) {
                             if (Rs2Inventory.get(neededRune) == null || Rs2Inventory.get(neededRune).getQuantity() <= config.minRuneAmount()) {
@@ -829,10 +846,14 @@ public class BarrowsScript extends Script {
             // We're not in the mound yet.
             randomMoundTile = moundArea.toWorldPointList().get(Rs2Random.between(0,(totalTiles-1)));
 
-            if(Rs2Player.getWorldLocation().distanceTo(randomMoundTile) <= 12){
+            if(Rs2Player.getWorldLocation().distanceTo(randomMoundTile) <= Rs2Random.between(10,15)){
                 LocalPoint localTile = LocalPoint.fromWorld(Microbot.getClient().getTopLevelWorldView(), randomMoundTile);
                 if(localTile != null && Rs2Camera.isTileOnScreen(localTile)){
-                    Rs2Walker.walkFastCanvas(randomMoundTile);
+                    if  (!Rs2Player.isMoving()) {
+                        Rs2Walker.walkFastCanvas(randomMoundTile);
+                        Rs2Player.waitForWalking();
+                    }
+
                     Rs2Player.waitForWalking();
                 } else {
                     Rs2Walker.walkTo(randomMoundTile);
@@ -1083,36 +1104,23 @@ public class BarrowsScript extends Script {
         }
     }
 
-    public void gettheRune(){
-        if(!neededRune.equals("unknown")) return;
-
-        neededRune = "unknown";
-        int magicLvl = Rs2Player.getRealSkillLevel(Skill.MAGIC);
-
-        if(magicLvl >= 41 && magicLvl < 62) neededRune = "Death rune";
-
-        if(magicLvl >= 62 && magicLvl < 81) neededRune = "Blood rune";
-
-        if(magicLvl >= 81) neededRune = "Wrath rune";
-    }
-
     public void setAutoCast(){
-        if("Wrath rune".equals(neededRune)){
-            if (Rs2Magic.getCurrentAutoCastSpell() != Rs2CombatSpells.WIND_SURGE) {
-                Rs2Combat.setAutoCastSpell(Rs2CombatSpells.WIND_SURGE, false);
-            }
-        }
-
-        if("Blood rune".equals(neededRune)){
-            if (Rs2Magic.getCurrentAutoCastSpell() != Rs2CombatSpells.WIND_WAVE) {
-                Rs2Combat.setAutoCastSpell(Rs2CombatSpells.WIND_WAVE, false);
-            }
-        }
-
-        if("Death rune".equals(neededRune)){
-            if (Rs2Magic.getCurrentAutoCastSpell() != Rs2CombatSpells.WIND_BLAST) {
-                Rs2Combat.setAutoCastSpell(Rs2CombatSpells.WIND_BLAST, false);
-            }
+        switch (config.combatSpell()) {
+            case WIND_SURGE:
+                if (Rs2Magic.getCurrentAutoCastSpell() != Rs2CombatSpells.WIND_SURGE) {
+                    Rs2Combat.setAutoCastSpell(Rs2CombatSpells.WIND_SURGE, false);
+                }
+                break;
+            case WIND_WAVE:
+                if (Rs2Magic.getCurrentAutoCastSpell() != Rs2CombatSpells.WIND_WAVE) {
+                    Rs2Combat.setAutoCastSpell(Rs2CombatSpells.WIND_WAVE, false);
+                }
+                break;
+            case WIND_BLAST:
+                if (Rs2Magic.getCurrentAutoCastSpell() != Rs2CombatSpells.WIND_BLAST) {
+                    Rs2Combat.setAutoCastSpell(Rs2CombatSpells.WIND_BLAST, false);
+                }
+                break;
         }
     }
 
@@ -1257,6 +1265,7 @@ public class BarrowsScript extends Script {
                 if(isAhrim && config.rangeAhrim()) {
                     Microbot.log("Switching to range gear for Ahrim...");
                     equipGearFromInventory(config.rangeAhrimGear());
+                    sleepGaussian(600, 850);
                 }
 
                 while(hintNpcModel() != null){
@@ -1353,6 +1362,7 @@ public class BarrowsScript extends Script {
             }
 
             Rs2Walker.walkTo(Chest, 2);
+            sleepGaussian(1200, 2200);
         } catch (Exception e) {
             Microbot.log("walkToChest failed: " + e.getMessage());
         }

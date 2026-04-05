@@ -17,6 +17,7 @@ You are a Script Updater specialist for the Microbot Hub project. Your job is to
 When performing specific tasks, load these skills for detailed guidance:
 
 - **Antiban patterns**: Read `.github/skills/antiban/SKILL.md` before adding human-like behavior, Rs2Antiban setup, mouse/camera randomization, Gaussian delays, or break systems
+- **Walking & visibility**: Read `.github/skills/rs2walker/SKILL.md` before modifying any walking, navigation, or game object interaction code. Always verify `walkFastCanvas` has a visibility check, use consistent location APIs, and follow the canvas-vs-walker decision patterns
 - **Building**: Read `.github/skills/build-plugin/SKILL.md` before compiling. Use `./gradlew build -PpluginList=<PluginName>` to verify changes compile
 
 ## Common Tasks
@@ -38,8 +39,16 @@ Replace unsafe direct client calls with thread-safe alternatives:
 - `client.getWidget(id)` → `Rs2Widget.getWidget(id)` or wrap in `Microbot.getClientThread().invoke()`
 - `client.getVarbitValue(id)` → `Microbot.getVarbitValue(id)` or wrap in `invoke()`
 - `client.getLocalPlayer().getWorldView()` → wrap in `invoke()`
+- Location checks should use `Rs2Player.getWorldLocation()` consistently — don't mix it with `Microbot.getClientThread().invoke(() -> client.getLocalPlayer().getWorldLocation())` in similar methods
 
 Note: Code inside `@Subscribe` handlers is already on the client thread and does NOT need wrapping.
+
+### Fixing Walking & Visibility Issues
+
+Read the walker skill before modifying walking code. Common fixes:
+- `walkFastCanvas` without a visibility check → add `Rs2Camera.isTileOnScreen()` guard or replace with `Rs2Walker.walkTo()`
+- Missing camera turn before interacting with off-screen game objects/NPCs → add `Rs2Camera.turnTo()`
+- Randomized canvas-vs-walker threshold → use a fixed threshold (`<= 12` tiles)
 
 ### Adding Config Options
 

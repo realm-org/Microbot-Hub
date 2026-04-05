@@ -296,6 +296,23 @@ Rs2Walker.walkTo(target);
 Rs2Walker.walkFastCanvas(target);
 ```
 
+### 6. Using `invoke()` for player location instead of `Rs2Player`
+
+`Rs2Player.getWorldLocation()` is already thread-safe. Wrapping `client.getLocalPlayer().getWorldLocation()` in `invoke()` is redundant and inconsistent with other location checks that use the utility wrapper.
+
+**Bad:**
+```java
+// Redundant invoke — Rs2Player already handles thread safety
+int x = Microbot.getClientThread().invoke(() ->
+    Microbot.getClient().getLocalPlayer().getWorldLocation().getX());
+```
+
+**Good:**
+```java
+// Use the thread-safe utility consistently
+int x = Rs2Player.getWorldLocation().getX();
+```
+
 ## Required Imports
 
 ```java
@@ -306,6 +323,36 @@ import net.runelite.client.plugins.microbot.util.camera.Rs2Camera;
 import net.runelite.client.plugins.microbot.util.walker.Rs2Walker;
 import net.runelite.client.plugins.microbot.util.player.Rs2Player;
 ```
+
+## Pattern 5: Interact with Game Object if Within Range, Otherwise Walk
+
+When a game object (chest, sarcophagus, bank booth, etc.) is within 12–14 tiles AND on-screen, interact directly instead of walking next to it first. The game client handles pathing to the object when you click it. If it's within range but off-screen, turn the camera first. If it's farther away, walk closer before interacting.
+
+```java
+Rs2TileObjectModel chest = rs2TileObjectCache.query().withId(CHEST_ID).nearest();
+if (chest != null) {
+    int distance = chest.getWorldLocation().distanceTo(Rs2Player.getWorldLocation());
+    if (distance <= 14) {
+        // Within interaction range — ensure it's on-screen, then click
+        LocalPoint chestLocal = LocalPoint.fromWorld(
+            Microbot.getClient().getTopLevelWorldView(), chest.getWorldLocation()
+        );
+        if (chestLocal != null && !Rs2Camera.isTileOnScreen(chestLocal)) {
+            Rs2Camera.turnTo(chestLocal);
+            sleep(300, 600);
+        }
+        chest.click("Open");
+        sleepUntil(() -> Rs2Player.isMoving(), Rs2Random.between(1000, 3000));
+        sleepUntil(() -> !Rs2Player.isMoving(), Rs2Random.between(3000, 6000));
+    } else {
+        // Too far — walk closer first
+        Rs2Walker.walkTo(chest.getWorldLocation());
+        Rs2Player.waitForWalking();
+    }
+}
+```
+
+**Why 14 tiles?** The game client allows clicking objects up to ~14 tiles away if they are visible on the canvas. Using `<= 14` as the upper threshold catches cases where the object is renderable but you'd otherwise waste time walking right next to it. Use `<= 12` for more conservative scripts.
 
 ## Quick Reference: Decision Tree
 
@@ -322,7 +369,10 @@ Need to walk to a target?
     └── Use Rs2Walker.walkFastCanvas() (almost always visible)
 
 Need to interact with NPC/object?
-├── Is it on-screen? (Rs2Camera.isTileOnScreen)
-│   └── Yes → interact directly
-└── No → Rs2Camera.turnTo() first, then interact
+├── Distance ≤ 14 tiles?
+│   ├── Is it on-screen? (Rs2Camera.isTileOnScreen)
+│   │   └── Yes → interact directly (game handles pathing)
+│   └── No → Rs2Camera.turnTo() first, then interact
+└── Distance > 14 tiles?
+    └── Rs2Walker.walkTo() first, then interact when close
 ```
