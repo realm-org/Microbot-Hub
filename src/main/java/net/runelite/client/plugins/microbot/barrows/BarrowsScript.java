@@ -297,19 +297,21 @@ public class BarrowsScript extends Script {
                                 }
 
                                 if (sarc.click("Search")) {
-                                    // Activate prayer after clicking the sarcophagus
-                                    sleepGaussian(400, 1200);
-                                    if(config.shouldPrayAgainstWeakerBrothers()){
-                                        activatePrayer(brother.getWhatToPray());
-                                    } else {
-                                        if(!brother.getName().contains("Torag") && !brother.getName().contains("Guthan") && !brother.getName().contains("Verac")){
-                                            activatePrayer(brother.getWhatToPray());
-                                        }
-                                    }
                                     sleepUntil(() -> Rs2Player.isMoving(), Rs2Random.between(1000, 3000));
                                     sleepUntil(() -> !Rs2Player.isMoving() || Rs2Player.isInCombat(), Rs2Random.between(3000, 6000));
                                     // the brother could take a second to spawn in.
-                                    sleepUntil(() -> hintNpcModel() != null || Rs2Dialogue.isInDialogue(), Rs2Random.between(750, 1500));
+                                    sleepUntil(() -> hintNpcModel() != null || Rs2Dialogue.isInDialogue(), Rs2Random.between(1000, 1500));
+
+                                    // Activate prayer only after brother has spawned
+                                    // if (hintNpcModel() != null) {
+                                        if(config.shouldPrayAgainstWeakerBrothers()){
+                                            activatePrayer(brother.getWhatToPray());
+                                        } else {
+                                            if(!brother.getName().contains("Torag") && !brother.getName().contains("Guthan") && !brother.getName().contains("Verac")){
+                                                activatePrayer(brother.getWhatToPray());
+                                            }
+                                        }
+                                    // }
                                 }
 
                                 if(Rs2Dialogue.isInDialogue() && Rs2Dialogue.hasDialogueText("You've found a hidden")){
@@ -427,7 +429,7 @@ public class BarrowsScript extends Script {
                     Rs2TileObjectModel barrowsChest = rs2TileObjectCache.query().withId(20973).nearest();
 
                     if(barrowsChest != null &&
-                            (barrowsChest.getWorldLocation().distanceTo(Rs2Player.getWorldLocation()) <= 6)){
+                            (barrowsChest.getWorldLocation().distanceTo(Rs2Player.getWorldLocation()) < 5) ){
                         //chest ID: 20973
                         stopFutureWalker();
 
@@ -541,8 +543,8 @@ public class BarrowsScript extends Script {
 
                         }
                         java.util.List<String> keepItems = new java.util.ArrayList<>(java.util.Arrays.asList(
-                                neededRune, "Moonlight moth", "Moonlight moth mix (2)", "Teleport to house", "Spade", "Prayer potion(4)", "Prayer potion(3)", "Forgotten brew(4)", "Forgotten brew(3)", "Barrows teleport",
-                                ourfoodsname));
+                                neededRune, "Moonlight moth", "Moonlight moth mix (2)", "Teleport to house", "Spade", "Prayer potion(4)", "Prayer potion(3)", "Forgotten brew(4)", "Forgotten brew(3)", "Dramen staff", "Barrows teleport",
+                                "Ring of dueling", ourfoodsname));
                         if(config.rangeAhrim() && config.rangeAhrimGear() != null && !config.rangeAhrimGear().trim().isEmpty()) {
                             for(String item : config.rangeAhrimGear().split("\\s*,\\s*")) {
                                 if(!item.trim().isEmpty()) keepItems.add(item.trim());
@@ -553,7 +555,7 @@ public class BarrowsScript extends Script {
                                 if(!item.trim().isEmpty()) keepItems.add(item.trim());
                             }
                         }
-                        Rs2Bank.depositAll();
+                        Rs2Bank.depositAllExcept(keepItems);
 
                         if(!usingPoweredStaffs) {
                             if (Rs2Inventory.get(neededRune) == null || Rs2Inventory.get(neededRune).getQuantity() <= config.minRuneAmount()) {
@@ -811,12 +813,6 @@ public class BarrowsScript extends Script {
 
             if (!super.isRunning()) break;
 
-            //antipattern turn on prayer early
-            antiPatternEnableWrongPrayer();
-
-            antiPatternActivatePrayer();
-            //antipattern
-
             if (Rs2Inventory.contains("Spade")) {
                 if (Rs2Inventory.interact("Spade", "Dig")) {
                     sleepUntil(() -> Rs2Player.getWorldLocation().getPlane() == 3, Rs2Random.between(3000, 5000));
@@ -835,13 +831,13 @@ public class BarrowsScript extends Script {
             WorldPoint randomMoundTile;
             if (!super.isRunning()) break;
 
-            //antipattern turn on prayer early
-            antiPatternEnableWrongPrayer();
-
-            antiPatternActivatePrayer();
+            // Don't issue new walk commands while already moving or animating
+            if (Rs2Player.isMoving() || Rs2Player.isAnimating()) {
+                Rs2Player.waitForWalking();
+                continue;
+            }
 
             antiPatternDropVials();
-            //antipattern
 
             // We're not in the mound yet.
             randomMoundTile = moundArea.toWorldPointList().get(Rs2Random.between(0,(totalTiles-1)));
@@ -849,11 +845,7 @@ public class BarrowsScript extends Script {
             if(Rs2Player.getWorldLocation().distanceTo(randomMoundTile) <= Rs2Random.between(10,15)){
                 LocalPoint localTile = LocalPoint.fromWorld(Microbot.getClient().getTopLevelWorldView(), randomMoundTile);
                 if(localTile != null && Rs2Camera.isTileOnScreen(localTile)){
-                    if  (!Rs2Player.isMoving()) {
-                        Rs2Walker.walkFastCanvas(randomMoundTile);
-                        Rs2Player.waitForWalking();
-                    }
-
+                    Rs2Walker.walkFastCanvas(randomMoundTile);
                     Rs2Player.waitForWalking();
                 } else {
                     Rs2Walker.walkTo(randomMoundTile);
@@ -886,7 +878,7 @@ public class BarrowsScript extends Script {
                     }
                 }
 
-                if  (!Rs2Player.isMoving()) {
+                if (!Rs2Player.isMoving() && !Rs2Player.isAnimating()) {
                     Rs2Walker.walkCanvas(randomMoundTile);
                     Rs2Player.waitForWalking();
                 }
@@ -1128,6 +1120,7 @@ public class BarrowsScript extends Script {
         if(!Rs2Prayer.isPrayerActive(prayer)){
             Microbot.log("Turning on Prayer.");
             drinkPrayerPot();
+            sleepGaussian(150, 350);
             Rs2Prayer.toggle(prayer);
         }
     }
@@ -1200,8 +1193,8 @@ public class BarrowsScript extends Script {
         }
     }
     public void reJfount(){
-        int rejat = Rs2Random.between(10,30);
-        int runener = Rs2Random.between(50,65);
+        int rejat = 45;
+        int runener = 80;
         while(Rs2Player.getBoostedSkillLevel(Skill.PRAYER) < rejat || Rs2Player.getRunEnergy() <= runener){
             if (!super.isRunning()) break;
 
@@ -1234,7 +1227,7 @@ public class BarrowsScript extends Script {
                     String action = "Drink";
                     if (prayerpotion.getName().equals("Moonlight moth")) action = "Release";
 
-                    if (Rs2Inventory.interact(prayerpotion, action)) sleep(0, 750);
+                    if (Rs2Inventory.interact(prayerpotion, action)) sleep(300, 750);
                 }
             }
         }
