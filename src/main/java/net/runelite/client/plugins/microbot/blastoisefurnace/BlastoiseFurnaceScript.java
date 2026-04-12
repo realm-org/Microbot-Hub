@@ -14,14 +14,12 @@ import net.runelite.client.plugins.microbot.util.antiban.Rs2AntibanSettings;
 import net.runelite.client.plugins.microbot.util.bank.Rs2Bank;
 import net.runelite.client.plugins.microbot.util.dialogues.Rs2Dialogue;
 import net.runelite.client.plugins.microbot.util.equipment.Rs2Equipment;
-import net.runelite.client.plugins.microbot.util.gameobject.Rs2GameObject;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2ItemModel;
 import net.runelite.client.plugins.microbot.util.keyboard.Rs2Keyboard;
 import net.runelite.client.plugins.microbot.util.math.Rs2Random;
 import net.runelite.client.plugins.microbot.util.misc.Rs2Potion;
-import net.runelite.client.plugins.microbot.util.npc.Rs2Npc;
-import net.runelite.client.plugins.microbot.util.npc.Rs2NpcModel;
+import net.runelite.client.plugins.microbot.util.gameobject.Rs2GameObject;
 import net.runelite.client.plugins.microbot.util.player.Rs2Player;
 import net.runelite.client.plugins.microbot.util.walker.Rs2Walker;
 import net.runelite.client.plugins.microbot.util.widget.Rs2Widget;
@@ -95,7 +93,7 @@ public class BlastoiseFurnaceScript extends Script {
                         return;
                     }
                     Rs2Walker.walkTo(new WorldPoint(2931, 10197, 0));
-                    Rs2GameObject.interact(DWARF_KELDAGRIM_FACTORY_STAIRS);
+                    Microbot.getRs2TileObjectCache().query().interact(DWARF_KELDAGRIM_FACTORY_STAIRS);
                     return;
                 }
 
@@ -209,8 +207,8 @@ public class BlastoiseFurnaceScript extends Script {
         sleep(500, 1200);
         Rs2Bank.closeBank();
         sleepUntil(() -> !Rs2Bank.isOpen());
-        Rs2NpcModel blastie = Rs2Npc.getNpc("Blast Furnace Foreman");
-        Rs2Npc.interact(blastie, "Pay");
+        var blastie = Microbot.getRs2NpcCache().query().withName("Blast Furnace Foreman").nearestOnClientThread();
+        if (blastie != null) blastie.click("Pay");
         sleepUntil(Rs2Dialogue::isInDialogue, 10000);
         if (Rs2Dialogue.hasSelectAnOption()) {
             Rs2Dialogue.clickOption("Yes");
@@ -240,7 +238,7 @@ public class BlastoiseFurnaceScript extends Script {
                 }
             }
 
-            Rs2GameObject.interact(BLAST_FURNACE_DISPENSER, "Take");
+            Microbot.getRs2TileObjectCache().query().interact(BLAST_FURNACE_DISPENSER, "Take");
 
             sleepUntil(() ->
                     Rs2Widget.hasWidget("What would you like to take?") ||
@@ -569,7 +567,7 @@ public class BlastoiseFurnaceScript extends Script {
             log.error("No ore in Inventory");
             return false;
         }
-        if (!Rs2GameObject.interact(BLAST_FURNACE_CONVEYER_BELT_CLICKABLE, "Put-ore-on")) {
+        if (!Microbot.getRs2TileObjectCache().query().interact(BLAST_FURNACE_CONVEYER_BELT_CLICKABLE, "Put-ore-on")) {
             log.error("Failed to interact with conveyor belt");
             return false;
         }
@@ -742,7 +740,7 @@ public class BlastoiseFurnaceScript extends Script {
             sleepUntil(() -> !Rs2Bank.isOpen());
         }
 
-        Rs2GameObject.interact(BLAST_FURNACE_AUTOMATA_COFFER, "use");
+        Microbot.getRs2TileObjectCache().query().interact(BLAST_FURNACE_AUTOMATA_COFFER, "use");
         Rs2Player.waitForWalking(2400);
 
         if (underfilled && Rs2Dialogue.hasDialogueOption("deposit", false)) {
