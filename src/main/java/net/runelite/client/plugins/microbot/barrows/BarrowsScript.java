@@ -28,8 +28,7 @@ import net.runelite.client.plugins.microbot.util.magic.Rs2Magic;
 import net.runelite.client.plugins.microbot.util.magic.Rs2Spellbook;
 import net.runelite.client.plugins.microbot.util.math.Rs2Random;
 import net.runelite.client.plugins.microbot.util.misc.Rs2Food;
-import net.runelite.client.plugins.microbot.util.npc.Rs2Npc;
-import net.runelite.client.plugins.microbot.util.npc.Rs2NpcModel;
+import net.runelite.client.plugins.microbot.api.npc.models.Rs2NpcModel;
 import net.runelite.client.plugins.microbot.util.player.Rs2Player;
 import net.runelite.client.plugins.microbot.util.prayer.Rs2Prayer;
 import net.runelite.client.plugins.microbot.util.prayer.Rs2PrayerEnum;
@@ -864,7 +863,8 @@ public class BarrowsScript extends Script {
                 Microbot.log("At the mound, but we can't dig yet. Attempt: " + moundAttempts);
 
                 //strange old man body blocking us
-                net.runelite.client.plugins.microbot.api.npc.models.Rs2NpcModel strangeOldMan = rs2NpcCache.query().withName("Strange Old Man").nearest();
+
+                Rs2NpcModel strangeOldMan = rs2NpcCache.query().withName("Strange Old Man").nearestOnClientThread();
 
                 // Pick a new random tile, avoiding the Strange Old Man's tile
                 randomMoundTile = moundArea.toWorldPointList().get(Rs2Random.between(0,(totalTiles-1)));
@@ -938,7 +938,7 @@ public class BarrowsScript extends Script {
             if(RP>870) return;
 
 
-            net.runelite.client.plugins.microbot.api.npc.models.Rs2NpcModel skele = rs2NpcCache.query().withName("Skeleton").nearest();
+            Rs2NpcModel skele = rs2NpcCache.query().withName("Skeleton").nearestOnClientThread();
 
             if(skele == null || skele.isDead()) return;
 
@@ -985,7 +985,7 @@ public class BarrowsScript extends Script {
 
                         if(hintNpcModel()!=null) {
                             Rs2NpcModel barrowsbrotherHint = hintNpcModel();
-                            net.runelite.client.plugins.microbot.api.npc.models.Rs2NpcModel brother = rs2NpcCache.query().withName(barrowsbrotherHint.getName()).nearest();
+                            Rs2NpcModel brother = rs2NpcCache.query().withName(barrowsbrotherHint.getName()).nearest();
                             if(brother !=null && brother.hasLineOfSight()) {
                                 Microbot.log("The brother is here.");
                                 break;
@@ -1271,7 +1271,7 @@ public class BarrowsScript extends Script {
 
 
                     if(inTunnels) {
-                        if (!Rs2Npc.hasLineOfSight(currentBrother)) {
+                        if (!currentBrother.hasLineOfSight()) {
                             Microbot.log("No LOS!");
                             break;
                         }
@@ -1286,12 +1286,12 @@ public class BarrowsScript extends Script {
                     }
 
                     if(hintNpcModel() != null && Rs2Player.getInteracting() != null && !Rs2Player.getInteracting().getName().equals(hintNpcModel().getName())){
-                        if(Rs2Npc.attack(currentBrother)){
+                        if(currentBrother.click("Attack")){
                             sleepUntil(()-> Rs2Player.isInCombat(), Rs2Random.between(3000,6000));
                         }
                     } else {
                         if(!Rs2Player.isInCombat()){
-                            if(Rs2Npc.attack(currentBrother)){
+                            if(currentBrother.click("Attack")){
                                 sleepUntil(()-> Rs2Player.isInCombat(), Rs2Random.between(3000,6000));
                             }
                         }

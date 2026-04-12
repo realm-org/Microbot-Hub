@@ -26,8 +26,8 @@ import net.runelite.client.plugins.microbot.util.bank.Rs2Bank;
 import net.runelite.client.plugins.microbot.util.bank.enums.BankLocation;
 import net.runelite.client.plugins.microbot.util.coords.Rs2WorldPoint;
 import net.runelite.client.plugins.microbot.util.equipment.Rs2Equipment;
-import net.runelite.client.plugins.microbot.util.gameobject.Rs2GameObject;
 import net.runelite.client.plugins.microbot.util.grounditem.Rs2GroundItem;
+import net.runelite.client.plugins.microbot.api.tileobject.models.Rs2TileObjectModel;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.microbot.util.magic.Rs2Magic;
 import net.runelite.client.plugins.microbot.util.models.RS2Item;
@@ -365,7 +365,7 @@ public class ThievingScript extends Script {
             }
 
             // delayed door closing logic
-            List<TileObject> doors = getDoors(Rs2Player.getWorldLocation(), DOOR_CHECK_RADIUS);
+            List<Rs2TileObjectModel> doors = getDoors(Rs2Player.getWorldLocation(), DOOR_CHECK_RADIUS);
             if (doors.isEmpty()) {
                 DOOR_TIMER.unset();
             } else if (DOOR_TIMER.isSet()) {
@@ -474,24 +474,15 @@ public class ThievingScript extends Script {
         switch (currentState) {
             case LOOT:
                 final int id = getMostExpensiveGroundItemId();
-                if (id == -1)
-                    return;
-                if (Rs2Inventory.isFull())
-                    dropAllExceptImportant();
-                final RS2Item item = Arrays.stream(Rs2GroundItem.getAll(50))
-                        .filter(rs2Item -> rs2Item.getItem().getId() == id)
-                        .findFirst().orElse(null);
+                if (id == -1) return;
+                if (Rs2Inventory.isFull()) dropAllExceptImportant();
+                final Rs2TileItemModel item = Microbot.getRs2TileItemCache().query().withId(id).within(50).nearest();
                 if (item == null) {
                     log.warn("Loot Item is null");
                     return;
                 }
-                final Tile tile = item.getTile();
-                if (tile == null) {
-                    log.warn("Loot Tile is null");
-                    return;
-                }
-                walkTo("Walk to loot", item.getTile().getWorldLocation(), 1);
-                Rs2GroundItem.interact(item);
+                walkTo("Walk to loot", item.getWorldLocation(), 1);
+                item.click("Take");
                 return;
             case ESCAPE:
                 WorldPoint escape = null;
@@ -842,23 +833,22 @@ public class ThievingScript extends Script {
     }
 
     private List<TileObject> getDoors(WorldPoint wp, int radius) {
-        if (wp == null)
-            return Collections.emptyList();
+        if (wp == null) return Collections.emptyList();
         final Rs2WorldPoint rs2Wp = new Rs2WorldPoint(wp);
         // this take 1.5s off client thread
         return Microbot.getClientThread().runOnClientThreadOptional(() -> Rs2GameObject.getAll(
                 o -> {
                     ObjectComposition comp = Rs2GameObject.convertToObjectComposition(o);
-                    if (comp == null || !Arrays.asList(comp.getActions()).contains("Close"))
-                        return false;
+                    if (comp == null || !Arrays.asList(comp.getActions()).contains("Close")) return false;
 
                     final WorldPoint objWp = o.getWorldLocation();
                     return rs2Wp.distanceToPath(objWp) < Integer.MAX_VALUE;
-                }, wp, radius)).orElse(Collections.emptyList());
+                }, wp, radius
+        )).orElse(Collections.emptyList());
     };
 
     private boolean closeNearbyDoor(int radius) {
-        List<TileObject> doors;
+        List<Rs2TileObjectModel> doors;
         int doorCount = 0;
         while (!(doors = getDoors(Rs2Player.getWorldLocation(), radius)).isEmpty()) {
             if (doorCount >= 3) {
@@ -866,15 +856,13 @@ public class ThievingScript extends Script {
                 return false;
             }
             final WorldPoint myLoc = Rs2Player.getWorldLocation();
-            if (myLoc == null)
-                return false;
+            if (myLoc == null) return false;
             final TileObject door = doors.stream()
                     .min(Comparator.comparingInt(d -> d.getWorldLocation().distanceTo(myLoc)))
                     .orElseThrow();
 
             final WorldPoint doorWp = door.getWorldLocation();
-            if (!Rs2GameObject.interact(door, "Close"))
-                return false;
+            if (!Rs2GameObject.interact(door, "Close")) return false;
             if (door.getWorldLocation().distanceTo(Rs2Player.getWorldLocation()) > 1) {
                 if (!sleepUntilWithInterrupt(() -> Rs2Player.isMoving() || Rs2Player.isStunned(), 1_200))
                     return false;

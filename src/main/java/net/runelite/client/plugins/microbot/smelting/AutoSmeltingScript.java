@@ -1,6 +1,5 @@
 package net.runelite.client.plugins.microbot.smelting;
 
-import net.runelite.api.GameObject;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.client.plugins.microbot.Microbot;
@@ -10,12 +9,12 @@ import net.runelite.client.plugins.microbot.util.antiban.Rs2Antiban;
 import net.runelite.client.plugins.microbot.util.antiban.Rs2AntibanSettings;
 import net.runelite.client.plugins.microbot.util.bank.Rs2Bank;
 import net.runelite.client.plugins.microbot.util.equipment.Rs2Equipment;
-import net.runelite.client.plugins.microbot.util.gameobject.Rs2GameObject;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.microbot.util.player.Rs2Player;
 import net.runelite.client.plugins.microbot.util.keyboard.Rs2Keyboard;
 import net.runelite.client.plugins.microbot.util.walker.Rs2Walker;
 import net.runelite.client.plugins.microbot.util.widget.Rs2Widget;
+import net.runelite.client.plugins.microbot.api.tileobject.models.Rs2TileObjectModel;
 
 import java.awt.event.KeyEvent;
 import java.text.MessageFormat;
@@ -110,9 +109,12 @@ public class AutoSmeltingScript extends Script {
                     withdrawRightAmountOfMaterials(config);
                     return;
                 }
-                GameObject oneClickFurnace = Rs2GameObject.findObject("furnace", true, 20, false, initialPlayerLocation);
+                Rs2TileObjectModel oneClickFurnace = Microbot.getRs2TileObjectCache().query()
+                        .where(o -> o.getName() != null && o.getName().toLowerCase().contains("furnace"))
+                        .within(initialPlayerLocation, 20)
+                        .nearest();
                 if (oneClickFurnace != null) {
-                    Rs2GameObject.interact(oneClickFurnace, "smelt");
+                    oneClickFurnace.click("smelt");
                     sleepUntil(Rs2Player::isMoving, 1000);
                     sleepUntil(() -> !Rs2Player.isMoving(), 4000);
                     String widgetText1 = config.SELECTED_BAR_TYPE().getId() == ItemID.MOLTEN_GLASS ? "How many do you wish to make?" : "What would you like to smelt?";
@@ -134,9 +136,12 @@ public class AutoSmeltingScript extends Script {
                 }
 
                 // interact with the furnace until the smelting dialogue opens in chat, click the selected bar icon
-                GameObject furnace = Rs2GameObject.findObject("furnace",true,20,false,initialPlayerLocation);
+                Rs2TileObjectModel furnace = Microbot.getRs2TileObjectCache().query()
+                        .where(o -> o.getName() != null && o.getName().toLowerCase().contains("furnace"))
+                        .within(initialPlayerLocation, 20)
+                        .nearest();
                 if (furnace != null) {
-                    Rs2GameObject.interact(furnace, "smelt");
+                    furnace.click("smelt");
                     String widgetText2 = config.SELECTED_BAR_TYPE().getId() == ItemID.MOLTEN_GLASS ? "How many do you wish to make?" : "What would you like to smelt?";
                     Rs2Widget.sleepUntilHasWidgetText(widgetText2, 270, 5, false, 5000);
                     Rs2Keyboard.keyPress(KeyEvent.VK_SPACE);
