@@ -103,6 +103,9 @@ public class ResupplyHandler implements BaseHandler {
                 sleepUntil(() -> !Rs2Player.isAnimating(), 10_000);
             }
 
+            /* Decant partial potions to 4-dose */
+            decantMoonlightPotions();
+
             /* Drop leftovers */
             while (Rs2Inventory.contains(ItemID.PESTLE_AND_MORTAR))  Rs2Inventory.drop(ItemID.PESTLE_AND_MORTAR);
             sleep(600);
@@ -200,14 +203,68 @@ public class ResupplyHandler implements BaseHandler {
         Rs2Walker.walkFastCanvas(new WorldPoint(1512, 9693, 0));
 
         while (Rs2Inventory.contains(ItemID.BREAM_FISH_RAW)) {
-            if (!Rs2Player.isAnimating()) {
+            if (!Rs2Player.isAnimating(1200) || !Rs2Player.isInteracting()) {
                 if (Rs2GameObject.interact(ObjectID.PMOON_RANGE, "Cook")) {
-                    sleep(600, 900);
+                    sleepUntil(() -> !Rs2Player.isAnimating() || !Rs2Inventory.contains(ItemID.BREAM_FISH_RAW), 30_000);
                 }
             }
-            sleep(900, 1200);
+            sleep(600);
         }
         if (debugLogging) {Microbot.log("Finished cooking bream.");}
+    }
+
+    private void decantMoonlightPotions() {
+        if (debugLogging) { Microbot.log("Decanting moonlight potions to 4-dose"); }
+
+        int[] partialDoseIds = {
+            ItemID._3DOSEMOONLIGHTPOTION,
+            ItemID._2DOSEMOONLIGHTPOTION,
+            ItemID._1DOSEMOONLIGHTPOTION
+        };
+
+        boolean combined = true;
+        while (combined) {
+            combined = false;
+
+            int partialCount = 0;
+            for (int id : partialDoseIds) {
+                partialCount += Rs2Inventory.count(id);
+            }
+            if (partialCount < 2) break;
+
+            int firstId = -1;
+            int secondId = -1;
+            for (int id : partialDoseIds) {
+                int count = Rs2Inventory.count(id);
+                if (count > 0) {
+                    if (firstId == -1) {
+                        firstId = id;
+                        if (count >= 2) {
+                            secondId = id;
+                            break;
+                        }
+                    } else {
+                        secondId = id;
+                        break;
+                    }
+                }
+            }
+
+            if (firstId != -1 && secondId != -1) {
+                if (Rs2Inventory.combine(firstId, secondId)) {
+                    Rs2Inventory.waitForInventoryChanges(2_000);
+                    combined = true;
+                }
+            }
+            sleep(300, 600);
+        }
+
+        while (Rs2Inventory.contains(ItemID.VIAL_EMPTY)) {
+            Rs2Inventory.drop(ItemID.VIAL_EMPTY);
+            sleep(300, 600);
+        }
+
+        if (debugLogging) { Microbot.log("Decanting complete. 4-dose potions: " + Rs2Inventory.count(ItemID._4DOSEMOONLIGHTPOTION)); }
     }
 
     /**
