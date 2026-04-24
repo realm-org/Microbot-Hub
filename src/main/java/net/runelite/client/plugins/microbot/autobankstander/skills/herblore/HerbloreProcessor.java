@@ -15,6 +15,7 @@ import net.runelite.client.plugins.microbot.autobankstander.skills.herblore.enum
 import net.runelite.client.plugins.microbot.util.bank.Rs2Bank;
 import net.runelite.client.plugins.microbot.util.equipment.Rs2Equipment;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
+import net.runelite.client.plugins.microbot.util.inventory.Rs2ItemModel;
 import net.runelite.client.plugins.microbot.util.inventory.InteractOrder;
 import net.runelite.client.plugins.microbot.util.player.Rs2Player;
 import net.runelite.client.plugins.microbot.util.keyboard.Rs2Keyboard;
@@ -346,6 +347,7 @@ public class HerbloreProcessor implements BankStandingProcessor {
         if (Rs2Inventory.hasItem(currentHerbForUnfinished.clean) && Rs2Inventory.hasItem(ItemID.VIAL_WATER)) {
             log.info("Combining {} with vial of water", currentHerbForUnfinished.name());
             
+            sleep(400, 600);
             if (Rs2Inventory.combine(currentHerbForUnfinished.clean, ItemID.VIAL_WATER)) {
                 sleep(600, 800);
                 if (withdrawnAmount > 1) {

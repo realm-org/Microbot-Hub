@@ -19,6 +19,7 @@ import net.runelite.client.plugins.microbot.util.bank.enums.BankLocation;
 import net.runelite.client.plugins.microbot.util.combat.Rs2Combat;
 import net.runelite.client.plugins.microbot.util.coords.Rs2WorldArea;
 import net.runelite.client.plugins.microbot.util.dialogues.Rs2Dialogue;
+import net.runelite.client.plugins.microbot.util.equipment.JewelleryLocationEnum;
 import net.runelite.client.plugins.microbot.util.equipment.Rs2Equipment;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2ItemModel;
@@ -158,6 +159,10 @@ public class BarrowsScript extends Script {
 
                 if(config.selectedToBarrowsTPMethod().getToBarrowsTPMethodItemID() == ItemID.TELEPORT_TO_HOUSE) {
                     if (!inTunnels && !shouldBank && Rs2Player.getWorldLocation().distanceTo(new WorldPoint(3573, 3296, 0)) > 60) {
+                        if(Rs2Bank.isOpen()){
+                            closeBank();
+                            return;
+                        }
                         //needed to intercept the walker
                         if(rs2TileObjectCache.query().withId(4525).nearest() == null){
                             Rs2Inventory.interact("Teleport to house", "Inside");
@@ -502,6 +507,10 @@ public class BarrowsScript extends Script {
                                     inTunnels = false;
                                     shouldBank = true;
                                 } else {
+                                    if(Rs2Bank.isOpen()){
+                                        closeBank();
+                                        return;
+                                    }
                                     Rs2Inventory.interact("Teleport to house", "Inside");
                                     sleepUntil(() -> Rs2Player.getWorldLocation().getY() < 9600 || Rs2Player.getWorldLocation().getY() > 9730, Rs2Random.between(6000, 10000));
                                     ChestsOpened++;
@@ -749,16 +758,15 @@ public class BarrowsScript extends Script {
                 }
                 Rs2TileObjectModel regularPortal = rs2TileObjectCache.query().withIds(37603,37615,37591).nearest();
                 if(regularPortal != null){
-                    while(rs2TileObjectCache.query().withId(4525).nearest() != null){
+                    while(pohThing != null){
                         if(!super.isRunning()){break;}
                         if(!Rs2Player.isMoving()){
                             if(regularPortal.click("Enter")){
                                 sleepUntil(()-> Rs2Player.isMoving(), Rs2Random.between(2000,4000));
                                 sleepUntil(()-> !Rs2Player.isMoving(), Rs2Random.between(10000,15000));
-                                sleepUntil(()-> rs2TileObjectCache.query().withId(4525).nearest() == null, Rs2Random.between(10000,15000));
+                                sleepUntil(()-> rs2TileObjectCache.query().withIds(37603,37615,37591).nearest() == null, Rs2Random.between(10000,15000));
                             }
                         }
-                        if(rs2TileObjectCache.query().withId(4525).nearest() == null) break;
                     }
 
                 } else {
@@ -1181,10 +1189,8 @@ public class BarrowsScript extends Script {
                 if(inTunnels) inTunnels=false;
                 sleepUntil(() -> Rs2Player.isAnimating(), Rs2Random.between(2000, 4000));
                 sleepUntil(() -> !Rs2Player.isAnimating(), Rs2Random.between(6000, 10000));
-                return true;
             }
         }
-        return shouldBank;
     }
     public void disablePrayer(){
         if(Rs2Random.between(0,100) >= Rs2Random.between(0,2)) {

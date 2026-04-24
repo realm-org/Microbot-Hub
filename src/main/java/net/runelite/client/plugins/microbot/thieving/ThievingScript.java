@@ -26,8 +26,8 @@ import net.runelite.client.plugins.microbot.util.bank.Rs2Bank;
 import net.runelite.client.plugins.microbot.util.bank.enums.BankLocation;
 import net.runelite.client.plugins.microbot.util.coords.Rs2WorldPoint;
 import net.runelite.client.plugins.microbot.util.equipment.Rs2Equipment;
+import net.runelite.client.plugins.microbot.util.gameobject.Rs2GameObject;
 import net.runelite.client.plugins.microbot.util.grounditem.Rs2GroundItem;
-import net.runelite.client.plugins.microbot.api.tileobject.models.Rs2TileObjectModel;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.microbot.util.magic.Rs2Magic;
 import net.runelite.client.plugins.microbot.util.models.RS2Item;
@@ -365,7 +365,7 @@ public class ThievingScript extends Script {
             }
 
             // delayed door closing logic
-            List<Rs2TileObjectModel> doors = getDoors(Rs2Player.getWorldLocation(), DOOR_CHECK_RADIUS);
+            List<TileObject> doors = getDoors(Rs2Player.getWorldLocation(), DOOR_CHECK_RADIUS);
             if (doors.isEmpty()) {
                 DOOR_TIMER.unset();
             } else if (DOOR_TIMER.isSet()) {
@@ -836,7 +836,7 @@ public class ThievingScript extends Script {
         if (wp == null) return Collections.emptyList();
         final Rs2WorldPoint rs2Wp = new Rs2WorldPoint(wp);
         // this take 1.5s off client thread
-        return Microbot.getClientThread().runOnClientThreadOptional(() -> Rs2GameObject.getAll(
+        return Microbot.getClientThread().<List<TileObject>>runOnClientThreadOptional(() -> Rs2GameObject.getAll(
                 o -> {
                     ObjectComposition comp = Rs2GameObject.convertToObjectComposition(o);
                     if (comp == null || !Arrays.asList(comp.getActions()).contains("Close")) return false;
@@ -848,7 +848,7 @@ public class ThievingScript extends Script {
     };
 
     private boolean closeNearbyDoor(int radius) {
-        List<Rs2TileObjectModel> doors;
+        List<TileObject> doors;
         int doorCount = 0;
         while (!(doors = getDoors(Rs2Player.getWorldLocation(), radius)).isEmpty()) {
             if (doorCount >= 3) {
