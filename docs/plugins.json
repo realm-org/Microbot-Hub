@@ -1416,6 +1416,29 @@
         "url": "https://github.com/chsami/Microbot-Hub/releases/download/latest-release/barrowsplugin-2.0.9.jar"
     },
     {
+        "internalName": "ActionReplayPlugin",
+        "name": "AIO AIO</html>",
+        "description": "Record and replay sequences of in-game actions. 80/20 automation for one-off tasks.",
+        "tags": [
+            "microbot",
+            "aio",
+            "record",
+            "replay",
+            "macro",
+            "automation"
+        ],
+        "version": "1.1.0",
+        "minClientVersion": "2.1.32",
+        "authors": [
+            "Red Bracket"
+        ],
+        "iconUrl": "https://chsami.github.io/Microbot-Hub/ActionReplayPlugin/assets/icon.png",
+        "cardUrl": "https://chsami.github.io/Microbot-Hub/ActionReplayPlugin/assets/card.png",
+        "disable": false,
+        "sha256": "96fbcb022c82e52407662ecba0d2e2268da8f84cd04c718dee4ee8e17a25764a",
+        "url": "https://github.com/chsami/Microbot-Hub/releases/download/latest-release/actionreplayplugin-1.1.0.jar"
+    },
+    {
         "internalName": "FlippersChaserPlugin",
         "name": "Flippers Chaser",
         "description": "Automates obtaining Flippers from Mogres",
